@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const roomManager = require('./src/rooms');
 const { YoNuncaGame, yonuncaStatements } = require('./src/games/yonunca');
+const { BombaGame } = require('./src/games/bomba');
 
 
 const path = require('path');
@@ -166,6 +167,42 @@ io.on('connection', (socket) => {
         const room = roomManager.getRoom(roomCode);
         if (room && room.gameInstance) {
             room.gameInstance.markDrink(playerId, playerName);
+        }
+    });
+
+    // --- LA BOMBA EVENTS ---
+
+    socket.on('bomba:start', ({ roomCode, config }) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room) {
+            if (!room.gameInstance || room.game !== 'bomba') {
+                room.gameInstance = new BombaGame(roomCode, io, room.players, config);
+                room.game = 'bomba';
+            }
+            room.gameInstance.startGame();
+            broadcastToRoom(roomCode, 'gameStarted', 'bomba');
+        }
+    });
+
+    socket.on('bomba:reveal', ({ roomCode, cellIndex }) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            room.gameInstance.revealCell(cellIndex, socket.id);
+        }
+    });
+
+    socket.on('bomba:selectTarget', ({ roomCode, targetPlayerId }) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            room.gameInstance.selectSniperTarget(socket.id, targetPlayerId);
+        }
+    });
+
+    socket.on('bomba:requestState', (roomCode) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            socket.join(roomCode);
+            socket.emit('bomba:state', room.gameInstance.getState());
         }
     });
 

@@ -24,6 +24,8 @@ export default function Lobby() {
             console.log('[Lobby] Received gameStarted:', gameType);
             if (gameType === 'yonunca') {
                 navigate(`/yonunca/${roomCode}`, { state: { room: effectiveRoom } });
+            } else if (gameType === 'bomba') {
+                navigate(`/bomba/${roomCode}`, { state: { room: effectiveRoom } });
             }
         };
 
@@ -119,6 +121,33 @@ export default function Lobby() {
                         >
                             Jugar "Yo Nunca" 🍻
                         </button>
+
+                        {/* La Bomba with size selector */}
+                        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                            <p className="text-sm text-gray-400 mb-2 text-center">La Bomba - Tamaño del Tablero</p>
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                                <button
+                                    className="bg-red-700 hover:bg-red-600 p-2 rounded font-bold text-sm transition"
+                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'small' } })}
+                                >
+                                    4x4<br />Pequeño
+                                </button>
+                                <button
+                                    className="bg-red-600 hover:bg-red-500 p-2 rounded font-bold text-sm transition"
+                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'medium' } })}
+                                >
+                                    6x6<br />Mediano
+                                </button>
+                                <button
+                                    className="bg-red-500 hover:bg-red-400 p-2 rounded font-bold text-sm transition"
+                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'large' } })}
+                                >
+                                    8x8<br />Grande
+                                </button>
+                            </div>
+                            <p className="text-xs text-center text-gray-500">💣 La Bomba</p>
+                        </div>
+
                         <button
                             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg font-bold text-lg shadow-lg transition transform hover:scale-105"
                             onClick={() => console.log('Start Impostor')}
