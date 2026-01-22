@@ -79,6 +79,20 @@ export const SocketProvider = ({ children }) => {
         return () => newSocket.close();
     }, [isOffline]);
 
+    // Keep-alive ping to prevent server sleep on Render free tier
+    useEffect(() => {
+        const pingInterval = setInterval(() => {
+            // Only ping if we have an active socket connection
+            if (socket && socket.connected) {
+                fetch('/ping').catch(() => {
+                    // Silently ignore errors (server might be restarting)
+                });
+            }
+        }, 10 * 60 * 1000); // 10 minutes
+
+        return () => clearInterval(pingInterval);
+    }, [socket]);
+
     const enableOfflineMode = () => {
         setIsOffline(true);
     };
