@@ -17,12 +17,6 @@ const httpServer = createServer(app);
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
-
 // Setup CORS for Socket.io
 const io = new Server(httpServer, {
     cors: {
@@ -200,6 +194,17 @@ io.on('connection', (socket) => {
             }
         }
     });
+});
+
+// Health check / keep-alive endpoint
+app.get('/ping', (req, res) => {
+    res.json({ ok: true, timestamp: Date.now() });
+});
+
+// SPA catch-all: serve index.html for any route not matched above
+// This must be AFTER all API routes and static files
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 const PORT = process.env.PORT || 3001;
