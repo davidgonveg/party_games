@@ -1,0 +1,17 @@
+{
+    "name": "party-games",
+    "version": "1.0.0",
+    "description": "Party games app with Yo Nunca and more",
+    "scripts": {
+        "install:server": "cd server && npm install",
+        "install:client": "cd client && npm install",
+        "build:client": "cd client && npm run build",
+        "start": "node start_server.js"
+    },
+    "keywords": [
+        "party",
+        "games"
+    ],
+    "author": "",
+    "license": "ISC"
+}

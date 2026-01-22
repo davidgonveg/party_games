@@ -7,15 +7,26 @@ const roomManager = require('./src/rooms');
 const { YoNuncaGame, yonuncaStatements } = require('./src/games/yonunca');
 
 
+const path = require('path');
+
 const app = express();
 const cors = require('cors');
 app.use(cors({ origin: '*' })); // Allow all origins for dev
 const httpServer = createServer(app);
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
 // Setup CORS for Socket.io
 const io = new Server(httpServer, {
     cors: {
-        origin: "*", // En produccion cambiar por la URL del frontend
+        origin: "*", // Allow all for simplicity in V1 (handles both dev and prod)
         methods: ["GET", "POST"]
     }
 });
