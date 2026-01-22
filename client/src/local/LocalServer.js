@@ -1,4 +1,5 @@
 
+
 // Import data directly (assuming it's available in public or verifiable path)
 // For client side, we'll need the JSON available. 
 // We will assume 'yonunca_data.json' content is mirrored here or imported.
@@ -9,6 +10,7 @@
 
 // Check if I can import yonunca_data.json
 import yonuncaData from './yonunca_data.json';
+import LocalBombaGame from './games/LocalBombaGame.js';
 
 class LocalYoNuncaGame {
     constructor(roomCode, emitCallback) {
@@ -192,6 +194,59 @@ class LocalRoomManager {
                 if (this.room.gameInstance) {
                     this.room.gameInstance.emitState();
                     this.emitCallback('yonunca:list', yonuncaData);
+                }
+                break;
+
+            // --- LA BOMBA EVENTS ---
+
+            case 'bomba:start':
+                console.log('[LocalServer] Received bomba:start', payload);
+                try {
+                    this.room.game = 'bomba';
+                    this.room.gameInstance = new LocalBombaGame(
+                        'OFFLINE',
+                        this.emitCallback,
+                        this.room.players,
+                        payload.config
+                    );
+                    this.room.gameInstance.startGame();
+                    console.log('[LocalServer] Bomba game started successfully');
+                } catch (err) {
+                    console.error('[LocalServer] Error starting bomba:', err);
+                }
+                break;
+
+            case 'bomba:reveal':
+                if (this.room.gameInstance && this.room.game === 'bomba') {
+                    // Pass & Play: Assume the person clicking is valid for the current turn
+                    const game = this.room.gameInstance;
+                    const currentPlayer = game.gameState.players[game.gameState.currentTurnIndex];
+                    if (currentPlayer) {
+                        this.room.gameInstance.revealCell(payload.cellIndex, currentPlayer.id);
+                    }
+                }
+                break;
+
+            case 'bomba:selectTarget':
+                if (this.room.gameInstance && this.room.game === 'bomba') {
+                    // Pass & Play: Authorize action for the player selecting the target
+                    const game = this.room.gameInstance;
+
+                    // For selecting target, we must be careful. 
+                    // Usually this happens after one specific player triggered the sniper.
+                    // The pendingSniperData logic in BombaGame expects the playerID who triggered it.
+                    // So we must pass THAT id. (which is waitingForTarget... pendingSniperData.playerId)
+
+                    const pendingPlayerId = game.gameState.pendingSniperData?.playerId;
+                    if (pendingPlayerId) {
+                        this.room.gameInstance.selectSniperTarget(pendingPlayerId, payload.targetPlayerId);
+                    }
+                }
+                break;
+
+            case 'bomba:requestState':
+                if (this.room.gameInstance && this.room.game === 'bomba') {
+                    this.room.gameInstance.emitState();
                 }
                 break;
         }

@@ -3,6 +3,7 @@ import { SocketProvider } from './contexts/SocketContext';
 import Home from './pages/Home';
 import Lobby from './pages/Lobby';
 import YoNunca from './pages/YoNunca';
+import Bomba from './pages/Bomba';
 
 
 import OfflineSetup from './pages/OfflineSetup';
@@ -16,6 +17,7 @@ function App() {
           <Route path="/offline" element={<OfflineSetup />} />
           <Route path="/lobby/:roomCode" element={<Lobby />} />
           <Route path="/yonunca/:roomCode" element={<YoNunca />} />
+          <Route path="/bomba/:roomCode" element={<Bomba />} />
 
         </Routes>
       </BrowserRouter>

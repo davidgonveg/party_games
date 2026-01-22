@@ -36,7 +36,20 @@
         - [x] Fix Offline Mode (room creation race condition & DataCloneError)
         - [x] Fix Offline Selection Highlighting
 
-- [ ] **Phase 3: "Impostor" Game**
+- [x] **Phase 3: "La Bomba" Game**
+    - [x] **Design**
+        - [x] Create `design_la_bomba.md` with rules and mechanics
+    - [x] **Backend: Logic**
+        - [x] Implement `BombaGame` class
+        - [x] Grid generation logic (mines, modifiers)
+        - [x] Game state management (turn-based, revealed cells)
+    - [x] **Frontend: UI**
+        - [x] Create `BombaGame` component
+        - [x] Grid display (responsive)
+        - [x] Cell interaction (flip animation)
+        - [x] Game Over / Win animations
+
+- [ ] **Phase 4: "Impostor" Game**
     - [ ] **Backend: Logic**
         - [ ] Implement `ImpostorGame` class
         - [ ] Logic for word selection and role assignment
@@ -49,6 +62,6 @@
         - [ ] "Voting" view
         - [ ] "Results" view
 
-- [ ] **Phase 4: Polish & Deployment**
+- [ ] **Phase 5: Polish & Deployment**
     - [ ] Mobile responsiveness checks
     - [ ] Simple deployment configuration (Vercel/Railway config files)
