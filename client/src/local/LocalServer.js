@@ -25,7 +25,10 @@ class LocalYoNuncaGame {
     emit(event, data) {
         // Emit to the specific room (conceptually)
         // In local mode, we just trigger the callback
-        this.emitCallback(event, data);
+        // CRITICAL: Clone data to simulate network serialization.
+        // This ensures React sees a fresh object reference and triggers re-renders.
+        const clonedData = data ? JSON.parse(JSON.stringify(data)) : data;
+        this.emitCallback(event, clonedData);
     }
 
     startGame() {

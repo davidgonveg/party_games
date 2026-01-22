@@ -34,6 +34,7 @@
         - [x] Implement session check on Lobby/Game
         - [x] Add "Back" navigation buttons
         - [x] Fix Offline Mode (room creation race condition & DataCloneError)
+        - [x] Fix Offline Selection Highlighting
 
 - [ ] **Phase 3: "Impostor" Game**
     - [ ] **Backend: Logic**
