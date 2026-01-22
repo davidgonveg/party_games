@@ -77,6 +77,8 @@ const YoNunca = () => {
     const handleSetMode = (mode) => {
         console.log('Setting mode:', mode);
         socket.emit('yonunca:setMode', { roomCode, mode });
+        // Request state to ensure we have the full list
+        socket.emit('yonunca:requestState', roomCode);
     };
 
     const handleNextRandom = () => {
@@ -190,8 +192,10 @@ const YoNunca = () => {
                 )}
 
                 {gameMode === 'list' && (
-                    <div className="mt-4 bg-gray-800 rounded-xl max-h-40 overflow-y-auto p-2 border border-gray-700">
-                        <p className="text-center text-xs text-gray-400 mb-2">Selecciona una:</p>
+                    <div className={`mt-4 bg-gray-800 rounded-xl ${statement ? 'max-h-40' : 'h-[60vh]'} overflow-y-auto p-2 border border-gray-700`}>
+                        <p className="text-center text-xs text-gray-400 mb-2 sticky top-0 bg-gray-800 pb-2 z-10">
+                            Selecciona una ({statementList.length} disponibles):
+                        </p>
                         {statementList.map(s => (
                             <button key={s.id} onClick={() => handleListSelect(s.id)} className="block w-full text-left p-2 hover:bg-gray-700 rounded text-sm truncate">
                                 {s.id} - {s.text}

@@ -118,6 +118,8 @@ io.on('connection', (socket) => {
         if (room && room.gameInstance) {
             console.log(`[Server] setMode calling room.gameInstance.setMode(${mode})`);
             room.gameInstance.setMode(mode);
+            // Send full list to ensure client has all data for specific number mode
+            socket.emit('yonunca:list', yonuncaStatements);
         } else {
             console.log(`[Server] setMode failed: Room or GameInstance not found for ${roomCode}`);
         }
