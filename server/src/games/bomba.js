@@ -6,40 +6,66 @@ class BombaGame {
             size: config.size || 'medium', // 'small' (4x4), 'medium' (6x6), 'large' (8x8)
         };
 
-        // Grid dimensions
+        // Grid dimensions - adding default and validation
         const dimensions = {
             small: 4,
             medium: 6,
             large: 8
         };
-        this.gridSize = dimensions[this.config.size];
+        this.gridSize = dimensions[this.config.size] || 6;
         this.totalSquares = this.gridSize * this.gridSize;
+
+        console.log(`[Bomba] Creating game instance. Size: ${this.config.size}, Grid: ${this.gridSize}x${this.gridSize}`);
 
         // Bomb configuration
         const bombCounts = {
-            small: 3,   // 4x4 = 16 squares, 3 bombs
-            medium: 5,  // 6x6 = 36 squares, 5 bombs
-            large: 7    // 8x8 = 64 squares, 7 bombs
+            small: 3,
+            medium: 7,
+            large: 12
         };
-        this.totalBombs = bombCounts[this.config.size];
+        this.totalBombs = bombCounts[this.config.size] || 5;
 
         this.gameState = {
             players: players.map((p, idx) => ({ ...p, index: idx })),
             currentTurnIndex: 0,
             drinkCounter: 1,
-            revealedCells: [], // Array of cell indices that have been revealed
-            cells: {}, // Map: cellIndex -> { type, value, revealedBy }
+            revealedCells: [],
+            cells: {},
             bombsRevealed: 0,
             gameOver: false,
-            turnDirection: 1, // 1 = forward, -1 = backward (for Reverse)
-            history: [], // Log of actions
-            waitingForTarget: false, // For Sniper bomb
-            pendingSniperData: null, // { cellIndex, playerId }
+            turnDirection: 1,
+            history: [],
+            waitingForTarget: false,
+            pendingSniperData: null,
+            gridSize: this.gridSize,
+            totalSquares: this.totalSquares,
+            totalBombs: this.totalBombs
         };
     }
 
     startGame() {
         console.log(`[Bomba] Game started in room ${this.roomCode}. Grid: ${this.gridSize}x${this.gridSize}, Bombs: ${this.totalBombs}`);
+        this.emitState();
+    }
+
+    restartGame() {
+        console.log(`[Bomba] RESTARTING game in room ${this.roomCode}`);
+        this.gameState.currentTurnIndex = 0;
+        this.gameState.drinkCounter = 1;
+        this.gameState.revealedCells = [];
+        this.gameState.cells = {};
+        this.gameState.bombsRevealed = 0;
+        this.gameState.gameOver = false;
+        this.gameState.turnDirection = 1;
+        this.gameState.history = [];
+        this.gameState.waitingForTarget = false;
+        this.gameState.pendingSniperData = null;
+
+        // Ensure grid info is preserved and explicitly part of state
+        this.gameState.gridSize = this.gridSize;
+        this.gameState.totalSquares = this.totalSquares;
+
+        console.log(`[Bomba] State reset complete. Emitting...`);
         this.emitState();
     }
 
