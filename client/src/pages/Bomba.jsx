@@ -43,7 +43,8 @@ const Bomba = () => {
             setGameState(newState);
 
             // Show target modal if waiting for Sniper target selection
-            if (newState.waitingForTarget && newState.pendingSniperData?.playerId === socket.id) {
+            // In offline mode, we always show it for the local player who is controlling the device
+            if (newState.waitingForTarget && (isOffline || newState.pendingSniperData?.playerId === socket.id)) {
                 setShowTargetModal(true);
             } else {
                 setShowTargetModal(false);
@@ -77,6 +78,12 @@ const Bomba = () => {
         setShowTargetModal(false);
     };
 
+    const handleRestart = () => {
+        if (window.confirm('¿Seguro que quieres reiniciar la partida?')) {
+            socket.emit('bomba:restart', roomCode);
+        }
+    };
+
     if (!gameState) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
@@ -88,7 +95,7 @@ const Bomba = () => {
         );
     }
 
-    const gridSize = gameState.players.length > 0 ? Math.sqrt(gameState.cells[0]?.gridSize || 16) : 4;
+    const gridSize = gameState.gridSize || 4;
     const currentPlayer = gameState.players[gameState.currentTurnIndex];
     const isMyTurn = isOffline || currentPlayer?.id === socket.id;
 
@@ -103,12 +110,21 @@ const Bomba = () => {
                     <span>⬅</span> Volver al Lobby
                 </button>
                 <h1 className="text-3xl font-bold text-red-500">💣 La Bomba</h1>
-                <button
-                    onClick={() => socket.emit('bomba:requestState', roomCode)}
-                    className="text-blue-400 hover:text-blue-300"
-                >
-                    🔄
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleRestart}
+                        className="bg-yellow-600/20 text-yellow-500 hover:bg-yellow-600/40 px-3 py-1 rounded-lg text-sm font-bold border border-yellow-500/50 transition-all"
+                    >
+                        🔄 Reiniciar
+                    </button>
+                    <button
+                        onClick={() => socket.emit('bomba:requestState', roomCode)}
+                        className="text-blue-400 hover:text-blue-300 p-2 bg-gray-800 rounded-lg border border-gray-700"
+                        title="Refrescar estado"
+                    >
+                        🔄
+                    </button>
+                </div>
             </div>
 
             {/* HUD */}
@@ -146,16 +162,42 @@ const Bomba = () => {
 
             {/* Game Over */}
             {gameState.gameOver && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 p-8 rounded-2xl text-center max-w-md">
-                        <h2 className="text-4xl font-bold mb-4 text-red-500">💥 ¡BOOM!</h2>
-                        <p className="text-xl mb-6">¡Partida terminada!</p>
-                        <button
-                            onClick={() => navigate(`/lobby/${roomCode}`)}
-                            className="bg-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-700"
-                        >
-                            Volver al Lobby
-                        </button>
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-gray-800 p-8 rounded-3xl text-center max-w-md w-full border-2 border-red-500 shadow-2xl shadow-red-500/20">
+                        <div className="text-6xl mb-4 animate-bounce">💥</div>
+                        <h2 className="text-4xl font-black mb-2 text-red-500 tracking-tighter">¡BOOM!</h2>
+
+                        {/* Final Drink Info */}
+                        <div className="bg-red-900/40 p-6 rounded-2xl mb-6 border border-red-500/30">
+                            <p className="text-gray-300 text-sm mb-1 uppercase tracking-widest font-bold">Total a beber:</p>
+                            <p className="text-5xl font-black text-white mb-2">
+                                {gameState.history[gameState.history.length - 1]?.bombEffect?.amount || gameState.drinkCounter} tragos
+                            </p>
+                            <div className="h-px bg-red-500/20 w-16 mx-auto mb-3"></div>
+                            <p className="text-xl text-yellow-400 font-bold italic">
+                                {gameState.history[gameState.history.length - 1]?.content?.description || '¡A beber!'}
+                            </p>
+                            {gameState.history[gameState.history.length - 1]?.bombEffect?.target && (
+                                <p className="text-white mt-2">
+                                    Objetivo: <span className="text-red-400 font-bold">{gameState.history[gameState.history.length - 1].bombEffect.target}</span>
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => socket.emit('bomba:restart', roomCode)}
+                                className="bg-yellow-600 hover:bg-yellow-700 px-6 py-4 rounded-xl font-bold text-white transition-all transform hover:scale-105 shadow-lg shadow-yellow-900/40 flex items-center justify-center gap-2"
+                            >
+                                🔄 Jugar de nuevo
+                            </button>
+                            <button
+                                onClick={() => navigate(`/lobby/${roomCode}`)}
+                                className="bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-xl font-bold text-gray-300 transition-all"
+                            >
+                                Volver al Lobby
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -168,7 +210,7 @@ const Bomba = () => {
                             🎯 El Francotirador
                         </h2>
                         <p className="text-center mb-6">
-                            ¡Elige a quién debe beber <span className="text-red-500 font-bold">{gameState.drinkCounter}</span> tragos!
+                            ¡Elige quién debe beber <span className="text-red-500 font-bold">{gameState.drinkCounter}</span> tragos!
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                             {gameState.players

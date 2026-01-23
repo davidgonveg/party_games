@@ -203,6 +203,7 @@ class LocalRoomManager {
                 console.log('[LocalServer] Received bomba:start', payload);
                 try {
                     this.room.game = 'bomba';
+                    // Re-instantiate to apply new config
                     this.room.gameInstance = new LocalBombaGame(
                         'OFFLINE',
                         this.emitCallback,
@@ -213,6 +214,13 @@ class LocalRoomManager {
                     console.log('[LocalServer] Bomba game started successfully');
                 } catch (err) {
                     console.error('[LocalServer] Error starting bomba:', err);
+                }
+                break;
+
+            case 'bomba:restart':
+                console.log('[LocalServer] Received bomba:restart');
+                if (this.room.gameInstance && this.room.game === 'bomba') {
+                    this.room.gameInstance.restartGame();
                 }
                 break;
 

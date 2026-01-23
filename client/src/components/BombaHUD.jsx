@@ -34,7 +34,7 @@ const BombaHUD = ({ gameState, currentPlayer, isMyTurn }) => {
                 <div className="flex-1 bg-gray-800 p-3 rounded-xl border border-gray-700">
                     <p className="text-xs text-gray-400">Casillas Reveladas</p>
                     <p className="text-xl font-bold text-blue-400">
-                        {gameState.revealedCells.length} / {gameState.players.length > 0 ? Object.keys(gameState.cells).length || (Math.pow(Math.sqrt(16), 2)) : 16}
+                        {gameState.revealedCells.length} / {gameState.totalSquares || 16}
                     </p>
                 </div>
                 <div className="flex-1 bg-gray-800 p-3 rounded-xl border border-gray-700">

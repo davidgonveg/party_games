@@ -16,8 +16,8 @@ class LocalBombaGame {
 
         const bombCounts = {
             small: 3,
-            medium: 5,
-            large: 7
+            medium: 7,
+            large: 12
         };
         this.totalBombs = bombCounts[this.config.size];
 
@@ -33,6 +33,9 @@ class LocalBombaGame {
             history: [],
             waitingForTarget: false,
             pendingSniperData: null,
+            gridSize: this.gridSize,
+            totalSquares: this.totalSquares,
+            totalBombs: this.totalBombs
         };
     }
 
@@ -45,6 +48,26 @@ class LocalBombaGame {
         console.log(`[LocalBomba] Game started. Grid: ${this.gridSize}x${this.gridSize}, Bombs: ${this.totalBombs}`);
         this.emitState();
         this.emit('gameStarted', 'bomba');
+    }
+
+    restartGame() {
+        console.log(`[LocalBomba] RESTARTING game`);
+        this.gameState.currentTurnIndex = 0;
+        this.gameState.drinkCounter = 1;
+        this.gameState.revealedCells = [];
+        this.gameState.cells = {};
+        this.gameState.bombsRevealed = 0;
+        this.gameState.gameOver = false;
+        this.gameState.turnDirection = 1;
+        this.gameState.history = [];
+        this.gameState.waitingForTarget = false;
+        this.gameState.pendingSniperData = null;
+
+        // Ensure grid info is preserved
+        this.gameState.gridSize = this.gridSize;
+        this.gameState.totalSquares = this.totalSquares;
+
+        this.emitState();
     }
 
     revealCell(cellIndex, playerId) {

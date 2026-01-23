@@ -173,14 +173,17 @@ io.on('connection', (socket) => {
     // --- LA BOMBA EVENTS ---
 
     socket.on('bomba:start', ({ roomCode, config }) => {
+        console.log(`[Server] bomba:start received for room ${roomCode}`, config);
         const room = roomManager.getRoom(roomCode);
         if (room) {
-            if (!room.gameInstance || room.game !== 'bomba') {
-                room.gameInstance = new BombaGame(roomCode, io, room.players, config);
-                room.game = 'bomba';
-            }
+            // Always create new instance on start to ensure config is applied
+            room.gameInstance = new BombaGame(roomCode, io, room.players, config);
+            room.game = 'bomba';
+
             room.gameInstance.startGame();
             broadcastToRoom(roomCode, 'gameStarted', 'bomba');
+        } else {
+            console.error(`[Server] bomba:start failed: Room ${roomCode} not found`);
         }
     });
 
@@ -188,6 +191,20 @@ io.on('connection', (socket) => {
         const room = roomManager.getRoom(roomCode);
         if (room && room.gameInstance) {
             room.gameInstance.revealCell(cellIndex, socket.id);
+        }
+    });
+
+    socket.on('bomba:restart', (roomCode) => {
+        console.log(`[Server] bomba:restart received for room ${roomCode}`);
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            console.log(`[Server] Calling restartGame() for ${roomCode}`);
+            room.gameInstance.restartGame();
+        } else {
+            console.error(`[Server] bomba:restart failed: Room or GameInstance not found for ${roomCode}`, {
+                roomExists: !!room,
+                gameInstanceExists: !!room?.gameInstance
+            });
         }
     });
 
