@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    font-family: 'Inter', system-ui, sans-serif;
-  }
-}
-
 @layer utilities {
     @keyframes flip {
         0% {
