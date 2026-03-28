@@ -44,7 +44,7 @@ class BombaGameCore {
 
     startGame() {
         console.log(`[BombaCore] Game started in room ${this.roomCode}. Grid: ${this.gridSize}x${this.gridSize}, Bombs: ${this.totalBombs}`);
-        // Subclass should call this.emitState() after super.startGame()
+        this.emitState();
     }
 
     restartGame() {
@@ -65,7 +65,7 @@ class BombaGameCore {
         this.gameState.totalSquares = this.totalSquares;
 
         console.log(`[BombaCore] State reset complete.`);
-        // Subclass should call this.emitState() after super.restartGame()
+        this.emitState();
     }
 
     revealCell(cellIndex, playerId) {

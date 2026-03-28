@@ -12,7 +12,7 @@ export default defineConfig({
   },
   server: {
     fs: {
-      allow: ['..'],
+      allow: [path.resolve(__dirname, '../shared')],
     },
   },
 })

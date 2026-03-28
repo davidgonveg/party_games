@@ -12,14 +12,12 @@ class LocalBombaGame extends BombaGameCore {
     }
 
     startGame() {
-        console.log(`[LocalBomba] Game started. Grid: ${this.gridSize}x${this.gridSize}, Bombs: ${this.totalBombs}`);
-        this.emitState();
+        super.startGame(); // calls emitState internally
         this.emit('gameStarted', 'bomba');
     }
 
     restartGame() {
         super.restartGame();
-        this.emitState();
     }
 
     emitState() {

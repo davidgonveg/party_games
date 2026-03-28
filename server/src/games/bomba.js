@@ -7,33 +7,30 @@ let BombaGame;
 // Resolved once at startup (called from server.js before any socket events fire)
 let _initPromise = null;
 
-async function initBombaGame() {
-    if (_initPromise) return _initPromise;
-    _initPromise = (async () => {
-        const { BombaGameCore } = await import('../../../shared/BombaGameCore.js');
+function initBombaGame() {
+    if (!_initPromise) {
+        _initPromise = import('../../../shared/BombaGameCore.js').then(({ BombaGameCore }) => {
+            BombaGame = class BombaGame extends BombaGameCore {
+                constructor(roomCode, io, players, config = {}) {
+                    super(roomCode, players, config);
+                    this.io = io;
+                }
 
-        BombaGame = class BombaGame extends BombaGameCore {
-            constructor(roomCode, io, players, config = {}) {
-                super(roomCode, players, config);
-                this.io = io;
-            }
+                startGame() {
+                    super.startGame();
+                }
 
-            startGame() {
-                super.startGame();
-                this.emitState();
-            }
+                restartGame() {
+                    super.restartGame();
+                }
 
-            restartGame() {
-                super.restartGame();
-                this.emitState();
-            }
-
-            emitState() {
-                console.log(`[Bomba] Emitting state to ${this.roomCode}`);
-                this.io.to(this.roomCode).emit('bomba:state', this.gameState);
-            }
-        };
-    })();
+                emitState() {
+                    console.log(`[Bomba] Emitting state to ${this.roomCode}`);
+                    this.io.to(this.roomCode).emit('bomba:state', this.gameState);
+                }
+            };
+        });
+    }
     return _initPromise;
 }
 
