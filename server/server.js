@@ -225,6 +225,14 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('bomba:skipTurn', ({ roomCode }) => {
+        const room = roomManager.getRoom(roomCode);
+        if (!room?.gameInstance) return;
+        // Only the host can skip (first player in the room is the host)
+        if (room.players[0]?.id !== socket.id) return;
+        room.gameInstance.skipTurn();
+    });
+
     socket.on('bomba:requestState', (roomCode) => {
         const room = roomManager.getRoom(roomCode);
         if (room && room.gameInstance) {
