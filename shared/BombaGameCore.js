@@ -282,7 +282,7 @@ class BombaGameCore {
         } else if (type === 'DIV_2') {
             this.gameState.drinkCounter = Math.max(1, Math.floor(this.gameState.drinkCounter / value));
         } else if (type === 'ADD_PLAYERS') {
-            this.gameState.drinkCounter += this.gameState.players.length;
+            this.gameState.drinkCounter += value;
         }
     }
 

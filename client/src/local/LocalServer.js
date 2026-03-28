@@ -11,6 +11,7 @@
 // Check if I can import yonunca_data.json
 import yonuncaData from './yonunca_data.json';
 import LocalBombaGame from './games/LocalBombaGame.js';
+import LocalImpostorGame from './games/LocalImpostorGame.js';
 
 class LocalYoNuncaGame {
     constructor(roomCode, emitCallback) {
@@ -254,6 +255,58 @@ class LocalRoomManager {
 
             case 'bomba:requestState':
                 if (this.room.gameInstance && this.room.game === 'bomba') {
+                    this.room.gameInstance.emitState();
+                }
+                break;
+
+            case 'bomba:skipTurn':
+                if (this.room.gameInstance && this.room.game === 'bomba') {
+                    this.room.gameInstance.skipTurn();
+                }
+                break;
+
+            // --- IMPOSTOR EVENTS ---
+            case 'impostor:start':
+                console.log('[LocalServer] Received impostor:start');
+                try {
+                    this.room.game = 'impostor';
+                    this.room.gameInstance = new LocalImpostorGame(
+                        'OFFLINE',
+                        this.emitCallback,
+                        this.room.players
+                    );
+                    this.room.gameInstance.startGame();
+                } catch (err) {
+                    console.error('[LocalServer] Error starting impostor:', err);
+                }
+                break;
+
+            case 'impostor:restart':
+                if (this.room.gameInstance && this.room.game === 'impostor') {
+                    this.room.gameInstance.restartGame();
+                }
+                break;
+
+            case 'impostor:reveal':
+                if (this.room.gameInstance && this.room.game === 'impostor') {
+                    this.room.gameInstance.revealRole(payload.playerId);
+                }
+                break;
+
+            case 'impostor:forceVoting':
+                if (this.room.gameInstance && this.room.game === 'impostor') {
+                    this.room.gameInstance.forceVoting();
+                }
+                break;
+
+            case 'impostor:vote':
+                if (this.room.gameInstance && this.room.game === 'impostor') {
+                    this.room.gameInstance.submitVote(payload.voterId, payload.targetId);
+                }
+                break;
+
+            case 'impostor:requestState':
+                if (this.room.gameInstance && this.room.game === 'impostor') {
                     this.room.gameInstance.emitState();
                 }
                 break;

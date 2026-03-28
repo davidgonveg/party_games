@@ -68,7 +68,7 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
             return 'from-green-600 to-green-800';
         }
 
-        return 'from-gray-600 to-gray-700';
+        return 'from-neutral-700 to-neutral-800';
     };
 
     const revealedColor = getCellColor();

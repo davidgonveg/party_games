@@ -70,19 +70,7 @@ const Impostor = () => {
         );
     }
 
-    // Identificar a mi jugador local
-    // En modo offline/local "pass and play", asumimos que el dispositivo es pasado de mano en mano?
-    // Espera, el LocalServer tiene un array de players. Si estamos en modo Local (isOffline),
-    // ¿cómo gestionamos quién está viendo la pantalla?
-    // En La Bomba, todo es público excepto cuando un jugador es Francotirador, y ahí se asume
-    // que el dispositivo lo tiene él.
-    // En el Impostor, REVEAL requiere que el jugador respectivo pulse el botón.
-    // Como estamos en un contexto de PWA multijugador cliente-servidor, cada uno tiene su propio móvil (`socket.id`).
-    // Y PARA MODO LOCAL: necesitamos un Pass & Play si estamos en 1 móvil.
-    // LocalServer se suele jugar con 1 solo móvil y isOffline=true.
-    // Si isOffline=true, "mi jugador" no existe, hay que hacer Pass & Play.
-    // Para no complicarlo mucho, en Local mostraremos una lista de jugadores, y el que le toca revela.
-
+    // En modo offline (Pass & Play), no hay jugador "local" — se gestiona por turno.
     const currentPlayer = isOffline
         ? null // Si es offline, requerirá manejo específico Pass&Play
         : gameState.players.find(p => p.id === socket?.id);
@@ -251,17 +239,17 @@ const Impostor = () => {
                 {(isOffline || currentPlayer?.isHost) && (
                     <button
                         className="border border-neutral-700 text-neutral-500 font-display tracking-widest text-sm py-2 px-6 rounded hover:border-white hover:text-white transition-colors mt-8"
-                        onClick={() => {
-                            if (window.confirm('¿Finalizar discusión e iniciar votación ya?')) {
-                                socket.emit('impostor:forceVoting', roomCode);
-                            }
-                        }}
+                        onClick={() => socket.emit('impostor:forceVoting', roomCode)}
                     >
                         FORZAR VOTACIÓN
                     </button>
                 )}
             </div>
         );
+    };
+
+    const handleVote = (targetId) => {
+        socket.emit('impostor:vote', { roomCode, voterId: currentPlayer.id, targetId });
     };
 
     const renderVoting = () => {
@@ -292,11 +280,7 @@ const Impostor = () => {
                         <button
                             key={p.id}
                             className="bg-impostor w-full font-display tracking-widest text-lg py-4 rounded hover:opacity-90 transition-opacity disabled:opacity-40"
-                            onClick={() => {
-                                if (window.confirm(`¿Seguro que quieres votar a ${p.name}?`)) {
-                                    socket.emit('impostor:vote', { roomCode, voterId: currentPlayer.id, targetId: p.id });
-                                }
-                            }}
+                            onClick={() => handleVote(p.id)}
                         >
                             {p.name}
                         </button>
@@ -328,11 +312,7 @@ const Impostor = () => {
                         <button
                             key={p.id}
                             className="bg-impostor w-full font-display tracking-widest text-lg py-4 rounded hover:opacity-90 transition-opacity disabled:opacity-40"
-                            onClick={() => {
-                                if (window.confirm(`¿Confirmas tu voto contra ${p.name}?`)) {
-                                    socket.emit('impostor:vote', { roomCode, voterId: playerToVote.id, targetId: p.id });
-                                }
-                            }}
+                            onClick={() => socket.emit('impostor:vote', { roomCode, voterId: playerToVote.id, targetId: p.id })}
                         >
                             {p.name}
                         </button>
