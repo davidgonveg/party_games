@@ -143,32 +143,29 @@ class BombaGameCore {
     generateSmartContent() {
         const counter = this.gameState.drinkCounter;
 
-        // Define probabilities based on counter value
-        let modifierChance, actionChance, specialChance;
+        const retoChance = 0.005;
+        let modifierChance;
 
         if (counter <= 3) {
             // Low counter: boost it!
-            modifierChance = 0.7;  // 70% modifiers
-            actionChance = 0.1;    // 10% actions
-            specialChance = 0.2;   // 20% specials
+            // Was 70% mod, 10% action, 20% special → now redistribute 99.5% as 70/20 ratio
+            modifierChance = 0.70 * (1 - retoChance); // ~0.696
         } else if (counter <= 10) {
             // Medium counter: balanced
-            modifierChance = 0.4;
-            actionChance = 0.4;
-            specialChance = 0.2;
+            // Was 40% mod, 40% action, 20% special → redistribute 99.5% as 40/60 ratio among mod/special
+            modifierChance = 0.40 * (1 - retoChance); // ~0.398
         } else {
             // High counter: force resolution
-            modifierChance = 0.2;
-            actionChance = 0.6;    // More likely to drink
-            specialChance = 0.2;
+            // Was 20% mod, 60% action, 20% special → redistribute 99.5% as 20/80 ratio among mod/special
+            modifierChance = 0.20 * (1 - retoChance); // ~0.199
         }
 
         const roll = Math.random();
 
-        if (roll < modifierChance) {
+        if (roll < retoChance) {
+            return this.generateReto();
+        } else if (roll < retoChance + modifierChance) {
             return this.generateModifier();
-        } else if (roll < modifierChance + actionChance) {
-            return this.generateAction();
         } else {
             return this.generateSpecial();
         }
@@ -187,13 +184,22 @@ class BombaGameCore {
                 { type: 'MULT_2', value: 2, description: 'x2 tragos' },
                 { type: 'MULT_3', value: 3, description: 'x3 tragos' },
             ];
-        } else {
-            // Higher counter: include dividers
+        } else if (counter <= 10) {
+            // Medium counter: ADD_1 weighted double
             modifiers = [
+                { type: 'ADD_1', value: 1, description: '+1 trago' },
                 { type: 'ADD_1', value: 1, description: '+1 trago' },
                 { type: 'ADD_2', value: 2, description: '+2 tragos' },
                 { type: 'MULT_2', value: 2, description: 'x2 tragos' },
                 { type: 'DIV_2', value: 2, description: '÷2 tragos' },
+            ];
+        } else {
+            // High counter: include ADD_PLAYERS, no ADD_2
+            modifiers = [
+                { type: 'ADD_1', value: 1, description: '+1 trago' },
+                { type: 'MULT_2', value: 2, description: 'x2 tragos' },
+                { type: 'DIV_2', value: 2, description: '÷2 tragos' },
+                { type: 'ADD_PLAYERS', description: `+${this.gameState.players.length} tragos (1 por jugador)` },
             ];
         }
 
@@ -201,10 +207,26 @@ class BombaGameCore {
         return { category: 'MODIFIER', ...modifier };
     }
 
-    generateAction() {
-        // Actions don't exist yet in our design, but we can add "Safe" as a placeholder
-        // Or we could make this just return Safe for now
-        return { category: 'SPECIAL', type: 'SAFE', description: '¡Salvado!' };
+    generateReto() {
+        const retos = [
+            { type: 'RETO', description: 'Imita a alguien de aquí hasta el próximo turno' },
+            { type: 'RETO', description: 'El jugador a tu izquierda te hace una pregunta, tienes que responder con sinceridad' },
+            { type: 'RETO', description: 'Habla con acento hasta el próximo turno' },
+            { type: 'RETO', description: 'Elige a alguien: os dais un trago a la vez o se lo bebe todo él' },
+            { type: 'RETO', description: 'El grupo decide: ¿verdad o reto? Tú eliges' },
+            { type: 'RETO', description: 'Intercambia tu bebida con el jugador a tu derecha' },
+            { type: 'RETO', description: 'El siguiente jugador revela dos casillas en su turno' },
+            { type: 'RETO', description: 'Todos los que lleven gafas beben 1' },
+            { type: 'RETO', description: 'El que más haya bebido esta noche bebe 1 más' },
+            { type: 'RETO', description: 'Di el nombre completo de alguien de aquí o bebe el contador' },
+            { type: 'RETO', description: 'Cuenta algo vergonzoso o bebe el contador completo' },
+            { type: 'RETO', description: 'Brindis obligatorio — todos beben 1' },
+            { type: 'RETO', description: 'El jugador a tu izquierda y derecha beben 1 cada uno' },
+            { type: 'RETO', description: 'Propón un brindis: todos beben si están de acuerdo, si no, tú bebes' },
+            { type: 'RETO', description: 'Todos los jugadores votan quién debería beber. El más votado bebe 1' },
+        ];
+        const reto = retos[Math.floor(Math.random() * retos.length)];
+        return { category: 'RETO', ...reto };
     }
 
     generateSpecial() {
@@ -247,6 +269,8 @@ class BombaGameCore {
         } else if (category === 'SPECIAL') {
             this.applySpecial(type);
             this.advanceTurn();
+        } else if (category === 'RETO') {
+            this.advanceTurn();
         }
     }
 
@@ -257,6 +281,8 @@ class BombaGameCore {
             this.gameState.drinkCounter *= value;
         } else if (type === 'DIV_2') {
             this.gameState.drinkCounter = Math.max(1, Math.floor(this.gameState.drinkCounter / value));
+        } else if (type === 'ADD_PLAYERS') {
+            this.gameState.drinkCounter += this.gameState.players.length;
         }
     }
 
@@ -307,6 +333,11 @@ class BombaGameCore {
             this.gameState.gameOver = true;
         }
 
+        this.advanceTurn();
+        this.emitState();
+    }
+
+    skipTurn() {
         this.advanceTurn();
         this.emitState();
     }
