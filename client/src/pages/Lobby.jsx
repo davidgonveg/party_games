@@ -26,6 +26,8 @@ export default function Lobby() {
                 navigate(`/yonunca/${roomCode}`, { state: { room: effectiveRoom } });
             } else if (gameType === 'bomba') {
                 navigate(`/bomba/${roomCode}`, { state: { room: effectiveRoom } });
+            } else if (gameType === 'impostor') {
+                navigate(`/impostor/${roomCode}`, { state: { room: effectiveRoom } });
             }
         };
 
@@ -42,7 +44,7 @@ export default function Lobby() {
         // ... (previous useEffect logic)
 
         // If we have room from location but not context, sync it?
-        // Actually, SocketContext is the source of truth for updates. 
+        // Actually, SocketContext is the source of truth for updates.
         // But for initial render, effectiveRoom is enough to show UI.
         // And if context updates later, effectiveRoom will update (since room updates).
 
@@ -61,7 +63,7 @@ export default function Lobby() {
                     console.log('Attempting restore via joinRoom');
                     socket.emit('joinRoom', { roomCode, playerName });
                     // sessionRestored event is not emitted by joinRoom, it emits roomUpdated.
-                    // But we need to catch it to stop loading. 
+                    // But we need to catch it to stop loading.
                     // Actually roomUpdated updates context, so effectiveRoom becomes truthy!
                 } else {
                     navigate('/');
@@ -78,8 +80,8 @@ export default function Lobby() {
 
     if (!effectiveRoom) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen text-white">
-                <p className="animate-pulse">Sincronizando con la sala...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#111] text-white">
+                <p className="animate-pulse text-neutral-500 text-sm tracking-widest uppercase">Sincronizando...</p>
             </div>
         );
     }
@@ -87,81 +89,110 @@ export default function Lobby() {
     const amIHost = isOffline || effectiveRoom.players?.find(p => p.id === socket?.id)?.isHost;
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white p-4 flex flex-col items-center">
+        <div className="min-h-screen bg-[#111] text-white p-4 flex flex-col items-center">
             <div className="w-full max-w-md">
-                <div className="bg-gray-800 p-4 rounded-lg mb-6 text-center shadow-lg border border-gray-700">
-                    <p className="text-gray-400 text-sm uppercase tracking-wider">Código de Sala</p>
-                    <h1 className="text-5xl font-mono font-bold text-indigo-400 tracking-widest my-2">{roomCode}</h1>
+
+                {/* Room code header */}
+                <div className="text-center mb-8 mt-4">
+                    <p className="text-xs tracking-[4px] uppercase text-neutral-500 mb-1">SALA</p>
+                    <h1 className="font-display text-5xl tracking-[8px] text-white">{roomCode}</h1>
                 </div>
 
+                {/* Players list */}
                 <div className="mb-8">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        <span>Jugadores</span>
-                        <span className="bg-gray-700 text-sm px-2 py-0.5 rounded-full">{effectiveRoom.players.length}</span>
-                    </h2>
-
-                    <div className="space-y-2">
+                    <p className="text-xs tracking-widest uppercase text-neutral-500 mb-3">
+                        Jugadores ({effectiveRoom.players.length})
+                    </p>
+                    <div className="flex flex-wrap gap-2">
                         {effectiveRoom.players.map(player => (
-                            <div key={player.id} className="bg-gray-800 p-3 rounded flex items-center justify-between border border-gray-700">
-                                <span className="font-medium">{player.name}</span>
-                                {player.isHost && <span className="text-yellow-400 text-xl">👑</span>}
+                            <div
+                                key={player.id}
+                                className="border border-neutral-700 text-neutral-400 text-sm px-3 py-1 rounded-sm inline-flex items-center gap-2"
+                            >
+                                <span>{player.name}</span>
+                                {player.isHost && (
+                                    <span className="text-xs text-neutral-600 uppercase tracking-wider">HOST</span>
+                                )}
                             </div>
                         ))}
                     </div>
                 </div>
 
+                {/* Host controls: game selection */}
                 {amIHost && (
                     <div className="space-y-3">
+                        <p className="text-xs tracking-widest uppercase text-neutral-500 mb-3">Elegir juego</p>
+
+                        {/* La Bomba */}
+                        <div className="space-y-1">
+                            <div className="bg-bomba py-4 px-5 rounded opacity-100 hover:opacity-90 transition-opacity">
+                                <p className="text-xs uppercase tracking-widest text-white opacity-70 mb-1">Adivina las casillas</p>
+                                <p className="font-display text-xl tracking-wide text-white">LA BOMBA</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1">
+                                <button
+                                    className="border border-neutral-700 text-neutral-400 text-xs py-2 px-3 rounded-sm hover:border-white hover:text-white transition-colors"
+                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'small' } })}
+                                >
+                                    4x4 Pequeño
+                                </button>
+                                <button
+                                    className="border border-neutral-700 text-neutral-400 text-xs py-2 px-3 rounded-sm hover:border-white hover:text-white transition-colors"
+                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'medium' } })}
+                                >
+                                    6x6 Mediano
+                                </button>
+                                <button
+                                    className="border border-neutral-700 text-neutral-400 text-xs py-2 px-3 rounded-sm hover:border-white hover:text-white transition-colors"
+                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'large' } })}
+                                >
+                                    8x8 Grande
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* El Impostor */}
                         <button
-                            className="w-full bg-pink-600 hover:bg-pink-700 text-white p-4 rounded-lg font-bold text-lg shadow-lg transition transform hover:scale-105"
+                            className="w-full bg-impostor py-4 px-5 rounded hover:opacity-90 transition-opacity text-left"
+                            onClick={() => {
+                                console.log('[Lobby] Clicking Start Impostor');
+                                socket.emit('impostor:start', roomCode);
+                            }}
+                        >
+                            <p className="text-xs uppercase tracking-widest text-white opacity-70 mb-1">Encuentra al traidor</p>
+                            <p className="font-display text-xl tracking-wide text-white">EL IMPOSTOR</p>
+                        </button>
+
+                        {/* Yo Nunca */}
+                        <button
+                            className="w-full bg-yonunca py-4 px-5 rounded hover:opacity-90 transition-opacity text-left"
                             onClick={() => {
                                 console.log('[Lobby] Clicking Start Yo Nunca');
                                 socket.emit('yonunca:start', roomCode);
                             }}
                         >
-                            Jugar "Yo Nunca" 🍻
-                        </button>
-
-                        {/* La Bomba with size selector */}
-                        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                            <p className="text-sm text-gray-400 mb-2 text-center">La Bomba - Tamaño del Tablero</p>
-                            <div className="grid grid-cols-3 gap-2 mb-3">
-                                <button
-                                    className="bg-red-700 hover:bg-red-600 p-2 rounded font-bold text-sm transition"
-                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'small' } })}
-                                >
-                                    4x4<br />Pequeño
-                                </button>
-                                <button
-                                    className="bg-red-600 hover:bg-red-500 p-2 rounded font-bold text-sm transition"
-                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'medium' } })}
-                                >
-                                    6x6<br />Mediano
-                                </button>
-                                <button
-                                    className="bg-red-500 hover:bg-red-400 p-2 rounded font-bold text-sm transition"
-                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'large' } })}
-                                >
-                                    8x8<br />Grande
-                                </button>
-                            </div>
-                            <p className="text-xs text-center text-gray-500">💣 La Bomba</p>
-                        </div>
-
-                        <button
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg font-bold text-lg shadow-lg transition transform hover:scale-105"
-                            onClick={() => console.log('Start Impostor')}
-                        >
-                            Jugar "Impostor" 🕵️
+                            <p className="text-xs uppercase tracking-widest text-white opacity-70 mb-1">Confiesa o bebe</p>
+                            <p className="font-display text-xl tracking-wide text-white">YO NUNCA</p>
                         </button>
                     </div>
                 )}
 
+                {/* Non-host waiting message */}
                 {!amIHost && (
-                    <div className="text-center text-gray-400 animate-pulse mt-8">
-                        Esperando a que el anfitrión inicie la partida...
+                    <div className="text-center text-neutral-600 text-sm tracking-widest uppercase animate-pulse mt-8">
+                        Esperando al anfitrión...
                     </div>
                 )}
+
+                {/* Back button */}
+                <div className="mt-10 border-t border-neutral-800 pt-6">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="text-neutral-500 hover:text-white text-sm transition-colors block text-center underline-offset-4 hover:underline w-full"
+                    >
+                        Salir de la sala
+                    </button>
+                </div>
             </div>
         </div>
     );
