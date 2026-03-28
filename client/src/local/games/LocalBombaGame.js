@@ -1,4 +1,4 @@
-import { BombaGameCore } from '../../../../shared/BombaGameCore';
+import { BombaGameCore } from '@shared/BombaGameCore';
 
 class LocalBombaGame extends BombaGameCore {
     constructor(roomCode, emitCallback, players, config = {}) {

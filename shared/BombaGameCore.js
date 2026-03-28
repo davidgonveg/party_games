@@ -326,4 +326,4 @@ class BombaGameCore {
     }
 }
 
-module.exports = { BombaGameCore };
+export { BombaGameCore };
