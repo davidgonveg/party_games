@@ -15,13 +15,7 @@ export default function Lobby() {
     useEffect(() => {
         if (!socket) return;
 
-        console.log('[Lobby] Effective Room:', effectiveRoom);
-        if (effectiveRoom) {
-            console.log('[Lobby] Players:', effectiveRoom.players);
-        }
-
         const handleGameStarted = (gameType) => {
-            console.log('[Lobby] Received gameStarted:', gameType);
             if (gameType === 'yonunca') {
                 navigate(`/yonunca/${roomCode}`, { state: { room: effectiveRoom } });
             } else if (gameType === 'bomba') {
@@ -60,7 +54,6 @@ export default function Lobby() {
                 const { roomCode: storedCode, playerName } = JSON.parse(stored);
                 // Only if code matches URL
                 if (storedCode === roomCode) {
-                    console.log('Attempting restore via joinRoom');
                     socket.emit('joinRoom', { roomCode, playerName });
                     // sessionRestored event is not emitted by joinRoom, it emits roomUpdated.
                     // But we need to catch it to stop loading.
@@ -123,41 +116,32 @@ export default function Lobby() {
                     <div className="space-y-3">
                         <p className="text-xs tracking-widest uppercase text-neutral-500 mb-3">Elegir juego</p>
 
-                        {/* La Bomba */}
-                        <div className="space-y-1">
-                            <div className="bg-bomba py-4 px-5 rounded opacity-100 hover:opacity-90 transition-opacity">
-                                <p className="text-xs uppercase tracking-widest text-white opacity-70 mb-1">Adivina las casillas</p>
-                                <p className="font-display text-xl tracking-wide text-white">LA BOMBA</p>
-                            </div>
-                            <div className="grid grid-cols-3 gap-1">
+                        {/* La Bomba — 3 size options */}
+                        <div className="flex flex-col gap-2">
+                            {[
+                                { size: 'small', label: 'LA BOMBA', sub: 'PEQUEÑA · 4×4' },
+                                { size: 'medium', label: 'LA BOMBA', sub: 'MEDIANA · 6×6' },
+                                { size: 'large', label: 'LA BOMBA', sub: 'GRANDE · 8×8' },
+                            ].map(({ size, label, sub }) => (
                                 <button
-                                    className="border border-neutral-700 text-neutral-400 text-xs py-2 px-3 rounded-sm hover:border-white hover:text-white transition-colors"
-                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'small' } })}
+                                    key={size}
+                                    onClick={() => amIHost && socket.emit('bomba:start', { roomCode, config: { size } })}
+                                    disabled={!amIHost}
+                                    className="bg-bomba w-full flex items-center gap-4 py-4 px-5 rounded hover:opacity-90 transition-opacity disabled:opacity-40"
                                 >
-                                    4x4 Pequeño
+                                    <span className="text-2xl">💣</span>
+                                    <div className="text-left">
+                                        <div className="font-display text-xl tracking-wide text-white leading-none">{label}</div>
+                                        <div className="text-xs uppercase tracking-widest text-white/70 mt-0.5">{sub}</div>
+                                    </div>
                                 </button>
-                                <button
-                                    className="border border-neutral-700 text-neutral-400 text-xs py-2 px-3 rounded-sm hover:border-white hover:text-white transition-colors"
-                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'medium' } })}
-                                >
-                                    6x6 Mediano
-                                </button>
-                                <button
-                                    className="border border-neutral-700 text-neutral-400 text-xs py-2 px-3 rounded-sm hover:border-white hover:text-white transition-colors"
-                                    onClick={() => socket.emit('bomba:start', { roomCode, config: { size: 'large' } })}
-                                >
-                                    8x8 Grande
-                                </button>
-                            </div>
+                            ))}
                         </div>
 
                         {/* El Impostor */}
                         <button
                             className="w-full bg-impostor py-4 px-5 rounded hover:opacity-90 transition-opacity text-left"
-                            onClick={() => {
-                                console.log('[Lobby] Clicking Start Impostor');
-                                socket.emit('impostor:start', roomCode);
-                            }}
+                            onClick={() => socket.emit('impostor:start', roomCode)}
                         >
                             <p className="text-xs uppercase tracking-widest text-white opacity-70 mb-1">Encuentra al traidor</p>
                             <p className="font-display text-xl tracking-wide text-white">EL IMPOSTOR</p>
@@ -166,10 +150,7 @@ export default function Lobby() {
                         {/* Yo Nunca */}
                         <button
                             className="w-full bg-yonunca py-4 px-5 rounded hover:opacity-90 transition-opacity text-left"
-                            onClick={() => {
-                                console.log('[Lobby] Clicking Start Yo Nunca');
-                                socket.emit('yonunca:start', roomCode);
-                            }}
+                            onClick={() => socket.emit('yonunca:start', roomCode)}
                         >
                             <p className="text-xs uppercase tracking-widest text-white opacity-70 mb-1">Confiesa o bebe</p>
                             <p className="font-display text-xl tracking-wide text-white">YO NUNCA</p>
@@ -187,7 +168,7 @@ export default function Lobby() {
                 {/* Back button */}
                 <div className="mt-10 border-t border-neutral-800 pt-6">
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => { socket.emit('leaveRoom', roomCode); navigate('/'); }}
                         className="text-neutral-500 hover:text-white text-sm transition-colors block text-center underline-offset-4 hover:underline w-full"
                     >
                         Salir de la sala

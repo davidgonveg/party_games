@@ -94,25 +94,26 @@ export default function Home() {
 
                     {/* Mode: Create */}
                     {mode === 'create' && (
-                        <>
+                        <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
                             <button
-                                onClick={handleCreate}
+                                type="submit"
                                 className="bg-white text-[#111] font-display tracking-widest text-lg py-3 px-6 w-full rounded hover:bg-neutral-200 transition-colors"
                             >
                                 CREAR SALA
                             </button>
                             <button
+                                type="button"
                                 onClick={() => { setMode('join'); setError(''); }}
                                 className="text-neutral-500 hover:text-white text-sm transition-colors mt-4 block text-center underline-offset-4 hover:underline w-full"
                             >
                                 Unirse con código
                             </button>
-                        </>
+                        </form>
                     )}
 
                     {/* Mode: Join */}
                     {mode === 'join' && (
-                        <>
+                        <form onSubmit={(e) => { e.preventDefault(); handleJoin(); }}>
                             <div className="mb-8">
                                 <label className="text-xs tracking-widest uppercase text-neutral-500 block mb-1">
                                     Código de sala
@@ -126,18 +127,19 @@ export default function Home() {
                                 />
                             </div>
                             <button
-                                onClick={handleJoin}
+                                type="submit"
                                 className="bg-white text-[#111] font-display tracking-widest text-lg py-3 px-6 w-full rounded hover:bg-neutral-200 transition-colors"
                             >
                                 ENTRAR
                             </button>
                             <button
+                                type="button"
                                 onClick={() => { setMode('create'); setError(''); }}
                                 className="text-neutral-500 hover:text-white text-sm transition-colors mt-4 block text-center underline-offset-4 hover:underline w-full"
                             >
                                 Crear sala nueva
                             </button>
-                        </>
+                        </form>
                     )}
 
                     {/* Offline mode */}

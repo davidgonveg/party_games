@@ -5,6 +5,7 @@ import { useSocket } from '../contexts/SocketContext';
 export default function OfflineSetup() {
     const [players, setPlayers] = useState([]);
     const [currentName, setCurrentName] = useState('');
+    const [error, setError] = useState('');
     const { enableOfflineMode, socket, isOffline } = useSocket();
     const navigate = useNavigate();
 
@@ -41,9 +42,10 @@ export default function OfflineSetup() {
     const addPlayer = (e) => {
         e.preventDefault();
         if (!currentName.trim()) return;
-        if (players.length >= 20) return alert('Máximo 20 jugadores');
+        if (players.length >= 20) { setError('Máximo 20 jugadores'); return; }
         setPlayers([...players, currentName.trim()]);
         setCurrentName('');
+        setError('');
     }
 
     const removePlayer = (index) => {
@@ -53,10 +55,9 @@ export default function OfflineSetup() {
     }
 
     const startGame = () => {
-        if (players.length < 2) return alert('Mínimo 2 jugadores');
+        if (players.length < 2) { setError('Mínimo 2 jugadores'); return; }
 
         // Initialize the local room atomically
-        console.log('Starting offline game with players:', players);
         socket.emit('offline:start', players);
     }
 
@@ -95,6 +96,7 @@ export default function OfflineSetup() {
                                 +
                             </button>
                         </div>
+                        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
                     </form>
 
                     {/* Players list */}
