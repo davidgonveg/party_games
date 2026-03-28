@@ -310,6 +310,17 @@ class LocalRoomManager {
                     this.room.gameInstance.emitState();
                 }
                 break;
+
+            case 'offline:updatePlayers': {
+                // payload: string[] of player names
+                this.room.players = payload.map((name, index) => ({
+                    id: `local-player-${index}`,
+                    name,
+                    isHost: index === 0,
+                }));
+                this.emitCallback('roomUpdated', this.getSafeRoom());
+                break;
+            }
         }
     }
 }

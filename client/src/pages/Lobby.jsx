@@ -96,19 +96,64 @@ export default function Lobby() {
                     <p className="text-xs tracking-widest uppercase text-neutral-500 mb-3">
                         Jugadores ({effectiveRoom.players.length})
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                        {effectiveRoom.players.map(player => (
+                    <div className="flex flex-col gap-2">
+                        {effectiveRoom.players.map((player, index) => (
                             <div
                                 key={player.id}
-                                className="border border-neutral-700 text-neutral-400 text-sm px-3 py-1 rounded-sm inline-flex items-center gap-2"
+                                className="border border-neutral-700 text-neutral-400 text-sm px-3 py-2 rounded-sm inline-flex items-center justify-between gap-2"
                             >
                                 <span>{player.name}</span>
-                                {player.isHost && (
-                                    <span className="text-xs text-neutral-600 uppercase tracking-wider">HOST</span>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {player.isHost && (
+                                        <span className="text-xs text-neutral-600 uppercase tracking-wider">HOST</span>
+                                    )}
+                                    {isOffline && effectiveRoom.players.length > 2 && (
+                                        <button
+                                            onClick={() => {
+                                                const updated = effectiveRoom.players
+                                                    .filter((_, i) => i !== index)
+                                                    .map(p => p.name);
+                                                socket.emit('offline:updatePlayers', updated);
+                                            }}
+                                            className="text-neutral-600 hover:text-red-400 transition-colors text-lg leading-none"
+                                            aria-label="Eliminar jugador"
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
+
+                    {/* Add player inline (offline only) */}
+                    {isOffline && effectiveRoom.players.length < 20 && (
+                        <form
+                            className="flex gap-2 mt-3"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                const input = e.currentTarget.elements.namedItem('newPlayer');
+                                const name = input.value.trim();
+                                if (!name) return;
+                                const updated = [...effectiveRoom.players.map(p => p.name), name];
+                                socket.emit('offline:updatePlayers', updated);
+                                input.value = '';
+                            }}
+                        >
+                            <input
+                                name="newPlayer"
+                                type="text"
+                                placeholder="Añadir jugador..."
+                                className="flex-1 bg-transparent border-b border-neutral-700 text-white text-sm py-1 outline-none placeholder-neutral-600 focus:border-neutral-400 transition-colors"
+                            />
+                            <button
+                                type="submit"
+                                className="text-neutral-500 hover:text-white text-sm transition-colors px-2"
+                            >
+                                + Añadir
+                            </button>
+                        </form>
+                    )}
                 </div>
 
                 {/* Host controls: game selection */}
