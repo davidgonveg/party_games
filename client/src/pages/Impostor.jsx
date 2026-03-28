@@ -11,6 +11,10 @@ const Impostor = () => {
     const [gameState, setGameState] = useState(null);
     const [isRevealing, setIsRevealing] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
+    const [countdown, setCountdown] = useState(null); // null | 3 | 2 | 1 | 0
+    const [countingForPlayerId, setCountingForPlayerId] = useState(null);
+    const isRevealingRef = React.useRef(false);
+    const [hasSeenRole, setHasSeenRole] = useState(false);
 
     const effectiveRoom = room || location.state?.room;
 
@@ -59,6 +63,40 @@ const Impostor = () => {
         }
     }, [gameState?.state, gameState?.discussionEndTime]);
 
+    // Trigger countdown when a new player's reveal turn starts
+    useEffect(() => {
+        if (gameState?.state !== 'REVEAL') return;
+
+        const nextPlayer = isOffline
+            ? gameState.players.find(p => !p.hasRevealed)
+            : gameState.players.find(p => p.id === socket?.id && !p.hasRevealed);
+
+        if (!nextPlayer) return;
+        if (nextPlayer.id === countingForPlayerId) return; // already counting
+
+        setCountingForPlayerId(nextPlayer.id);
+        setCountdown(3);
+        setIsRevealing(false);
+        setHasSeenRole(false);
+    }, [gameState?.state, gameState?.players, countingForPlayerId, isOffline, socket?.id]);
+
+    // Tick countdown down
+    useEffect(() => {
+        if (countdown === null || countdown === 0) return;
+        const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+        return () => clearTimeout(t);
+    }, [countdown]);
+
+    const handleHoldStart = () => {
+        isRevealingRef.current = true;
+        setIsRevealing(true);
+    };
+    const handleHoldEnd = () => {
+        if (isRevealingRef.current) setHasSeenRole(true);
+        isRevealingRef.current = false;
+        setIsRevealing(false);
+    };
+
     if (!gameState) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-[#111] text-white">
@@ -83,6 +121,15 @@ const Impostor = () => {
         RESULTS: { num: 4, label: 'Resultados' },
     };
     const phaseInfo = phaseLabels[gameState.state] || { num: 1, label: '' };
+
+    const CountdownScreen = ({ playerName }) => (
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+            <p className="text-xs tracking-widest uppercase text-neutral-500 mb-2">Pasa el móvil a</p>
+            <h1 className="font-display text-3xl text-white mb-16">{playerName}</h1>
+            <div className="font-display text-9xl text-impostor animate-pulse">{countdown}</div>
+            <p className="text-neutral-500 text-xs tracking-widest uppercase mt-8">No mires la pantalla</p>
+        </div>
+    );
 
     // Render helpers
     const renderReveal = () => {
@@ -115,53 +162,93 @@ const Impostor = () => {
             );
         }
 
+        if (countdown !== null && countdown > 0) {
+            return (
+                <div className="flex flex-col items-center justify-center min-h-[70vh]">
+                    <p className="text-xs tracking-widest uppercase text-neutral-500 mb-8">Preparando tu turno...</p>
+                    <div className="font-display text-9xl text-impostor animate-pulse">{countdown}</div>
+                </div>
+            );
+        }
+
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh]">
-                <p className="text-xs tracking-widest uppercase text-neutral-500 mb-2">Tu rol</p>
-                <h2 className="font-display text-3xl text-white mb-8">Descubre tu rol</h2>
-                <button
-                    className={`w-64 h-64 rounded-full flex flex-col items-center justify-center transition-all duration-300
-                        ${isRevealing ? 'bg-impostor scale-110 shadow-[0_0_80px_rgba(88,86,214,0.6)]' : 'bg-white/5 border-4 border-impostor shadow-[0_0_50px_rgba(88,86,214,0.2)]'}`}
-                    onMouseDown={() => setIsRevealing(true)}
-                    onMouseUp={() => setIsRevealing(false)}
-                    onTouchStart={() => setIsRevealing(true)}
-                    onTouchEnd={() => setIsRevealing(false)}
-                >
-                    {!isRevealing ? (
-                        <>
-                            <span className="text-5xl mb-2">👆</span>
-                            <span className="font-display text-white text-xl text-center px-4 tracking-widest">PULSA PARA VER</span>
-                        </>
-                    ) : (
-                        <div className="text-center animate-fade-in">
-                            <h3 className="font-display text-xl text-white mb-2 tracking-widest">ERES:</h3>
-                            <p className={`font-display text-3xl uppercase tracking-widest ${currentPlayer?.role === 'impostor' ? 'text-red-500' : 'text-green-400'}`}>
-                                {currentPlayer?.role === 'impostor' ? 'El Impostor' : 'Inocente'}
-                            </p>
-                            {currentPlayer?.role === 'innocent' && (
-                                <p className="mt-4 text-xs tracking-widest uppercase text-neutral-500">Palabra:</p>
-                            )}
-                            {currentPlayer?.role === 'innocent' && (
-                                <p className="font-display text-2xl text-white bg-white/10 px-4 py-1 rounded mt-1">{gameState.word}</p>
-                            )}
-                        </div>
+            <div className="flex flex-col min-h-[80vh] pt-8 pb-6 px-4">
+                <div className="flex flex-col items-center flex-1">
+                    <p className="text-xs tracking-widest uppercase text-neutral-500 mb-1">Tu rol</p>
+                    <h2 className="font-display text-3xl text-white mb-8">Descubre tu rol</h2>
+
+                    <div className={`w-52 h-52 rounded-full flex flex-col items-center justify-center border-4 transition-all duration-200 ${
+                        isRevealing
+                            ? currentPlayer?.role === 'impostor'
+                                ? 'border-red-500 bg-red-900/30'
+                                : 'border-green-400 bg-green-900/30'
+                            : 'border-impostor bg-white/5'
+                    }`}>
+                        {!isRevealing ? (
+                            <>
+                                <span className="text-3xl mb-1">🔒</span>
+                                <span className="text-xs tracking-widest text-neutral-500 uppercase text-center px-4">Mantén pulsado abajo</span>
+                            </>
+                        ) : (
+                            <div className="text-center animate-fade-in px-4">
+                                <p className={`font-display text-2xl uppercase tracking-widest mb-2 ${
+                                    currentPlayer?.role === 'impostor' ? 'text-red-500' : 'text-green-400'
+                                }`}>
+                                    {currentPlayer?.role === 'impostor' ? 'EL IMPOSTOR' : 'INOCENTE'}
+                                </p>
+                                {currentPlayer?.role === 'innocent' && (
+                                    <>
+                                        <p className="text-xs tracking-widest uppercase text-neutral-500 mb-1">Palabra</p>
+                                        <p className="font-display text-xl text-white">{gameState.word}</p>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {isRevealing && (
+                        <p className="text-neutral-500 text-xs tracking-widest uppercase mt-4">Suelta cuando hayas visto tu rol</p>
                     )}
-                </button>
-                <div className="mt-12 w-full max-w-xs">
+                </div>
+
+                <div className="w-full max-w-xs mx-auto flex flex-col gap-3">
+                    {hasSeenRole && !isRevealing && (
+                        <button
+                            className="bg-neutral-800 border border-neutral-600 w-full font-display tracking-widest text-base py-4 rounded hover:border-neutral-400 transition-colors"
+                            onClick={() => {
+                                setHasSeenRole(false);
+                                socket.emit('impostor:reveal', { roomCode, playerId: socket.id });
+                            }}
+                        >
+                            ✓ HE VISTO MI ROL
+                        </button>
+                    )}
+
                     <button
-                        className="bg-impostor w-full font-display tracking-widest text-xl py-6 rounded hover:opacity-90 transition-opacity disabled:opacity-40"
-                        onClick={() => socket.emit('impostor:reveal', { roomCode, playerId: socket.id })}
-                        disabled={!isRevealing}
+                        className={`w-full font-display tracking-widest text-xl py-8 rounded-2xl select-none transition-all duration-150 ${
+                            isRevealing
+                                ? 'bg-impostor shadow-[0_0_40px_rgba(88,86,214,0.5)] scale-[0.97]'
+                                : 'bg-impostor/80 hover:bg-impostor'
+                        }`}
+                        onMouseDown={handleHoldStart}
+                        onMouseUp={handleHoldEnd}
+                        onMouseLeave={handleHoldEnd}
+                        onTouchStart={(e) => { e.preventDefault(); handleHoldStart(); }}
+                        onTouchEnd={handleHoldEnd}
                     >
-                        VER MI ROL
+                        {isRevealing ? '👁 SUELTA PARA OCULTAR' : '👆 MANTÉN PULSADO PARA VER'}
                     </button>
-                    {!isRevealing && <p className="text-neutral-500 mt-2 text-center text-xs tracking-widest uppercase">Mantén pulsado para revelar</p>}
                 </div>
             </div>
         );
     };
 
     const PassAndPlayReveal = () => {
+        if (countdown !== null && countdown > 0 && countingForPlayerId) {
+            const player = gameState.players.find(p => p.id === countingForPlayerId);
+            return <CountdownScreen playerName={player?.name ?? '...'} />;
+        }
+
         // En Pass & Play, buscar el primer jugador que no ha revelado
         const playerToReveal = gameState.players.find(p => !p.hasRevealed);
 
@@ -173,45 +260,76 @@ const Impostor = () => {
         );
 
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh]">
-                <p className="text-xs tracking-widest uppercase text-neutral-500 mb-2">Pasa el móvil a</p>
-                <h1 className="font-display text-3xl text-white mb-12">{playerToReveal.name}</h1>
+            <div className="flex flex-col min-h-[80vh] pt-8 pb-6 px-4">
+                {/* TOP: name + role circle */}
+                <div className="flex flex-col items-center flex-1">
+                    <p className="text-xs tracking-widest uppercase text-neutral-500 mb-1">Turno de</p>
+                    <h1 className="font-display text-3xl text-white mb-8">{playerToReveal.name}</h1>
 
-                <button
-                    className={`w-64 h-64 rounded-full flex flex-col items-center justify-center transition-all duration-300
-                        ${isRevealing ? 'bg-impostor scale-110 shadow-[0_0_80px_rgba(88,86,214,0.6)]' : 'bg-white/5 border-4 border-impostor shadow-[0_0_50px_rgba(88,86,214,0.2)]'}`}
-                    onMouseDown={() => setIsRevealing(true)}
-                    onMouseUp={() => setIsRevealing(false)}
-                    onTouchStart={() => setIsRevealing(true)}
-                    onTouchEnd={() => setIsRevealing(false)}
-                >
-                    {!isRevealing ? (
-                        <>
-                            <span className="text-5xl mb-2">👆</span>
-                            <span className="font-display text-white text-xl text-center px-4 tracking-widest">PULSA PARA VER</span>
-                        </>
-                    ) : (
-                        <div className="text-center animate-fade-in">
-                            <h3 className="font-display text-xl text-white mb-2 tracking-widest">ERES:</h3>
-                            <p className={`font-display text-3xl uppercase tracking-widest ${playerToReveal.role === 'impostor' ? 'text-red-500' : 'text-green-400'}`}>
-                                {playerToReveal.role === 'impostor' ? 'El Impostor' : 'Inocente'}
-                            </p>
-                            {playerToReveal.role === 'innocent' && (
-                                <p className="mt-4 text-xs tracking-widest uppercase text-neutral-500">Palabra:</p>
-                            )}
-                            {playerToReveal.role === 'innocent' && (
-                                <p className="font-display text-2xl text-white bg-white/10 px-4 py-1 rounded mt-1">{gameState.word}</p>
-                            )}
-                        </div>
+                    {/* Role circle — always at top, away from thumb */}
+                    <div className={`w-52 h-52 rounded-full flex flex-col items-center justify-center border-4 transition-all duration-200 ${
+                        isRevealing
+                            ? playerToReveal.role === 'impostor'
+                                ? 'border-red-500 bg-red-900/30'
+                                : 'border-green-400 bg-green-900/30'
+                            : 'border-impostor bg-white/5'
+                    }`}>
+                        {!isRevealing ? (
+                            <>
+                                <span className="text-3xl mb-1">🔒</span>
+                                <span className="text-xs tracking-widest text-neutral-500 uppercase text-center px-4">Mantén pulsado abajo</span>
+                            </>
+                        ) : (
+                            <div className="text-center animate-fade-in px-4">
+                                <p className={`font-display text-2xl uppercase tracking-widest mb-2 ${
+                                    playerToReveal.role === 'impostor' ? 'text-red-500' : 'text-green-400'
+                                }`}>
+                                    {playerToReveal.role === 'impostor' ? 'EL IMPOSTOR' : 'INOCENTE'}
+                                </p>
+                                {playerToReveal.role === 'innocent' && (
+                                    <>
+                                        <p className="text-xs tracking-widest uppercase text-neutral-500 mb-1">Palabra</p>
+                                        <p className="font-display text-xl text-white">{gameState.word}</p>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {isRevealing && (
+                        <p className="text-neutral-500 text-xs tracking-widest uppercase mt-4">Suelta cuando hayas visto tu rol</p>
                     )}
-                </button>
-                <div className="mt-12 w-full max-w-xs">
+                </div>
+
+                {/* BOTTOM: controls — thumb zone */}
+                <div className="w-full max-w-xs mx-auto flex flex-col gap-3">
+                    {/* Pass button — only after having seen the role */}
+                    {hasSeenRole && !isRevealing && (
+                        <button
+                            className="bg-neutral-800 border border-neutral-600 w-full font-display tracking-widest text-base py-4 rounded hover:border-neutral-400 transition-colors"
+                            onClick={() => {
+                                setHasSeenRole(false);
+                                socket.emit('impostor:reveal', { roomCode, playerId: playerToReveal.id });
+                            }}
+                        >
+                            ✓ HE VISTO MI ROL — PASAR MÓVIL
+                        </button>
+                    )}
+
+                    {/* Hold button */}
                     <button
-                        className="bg-impostor w-full font-display tracking-widest text-xl py-6 rounded hover:opacity-90 transition-opacity disabled:opacity-40"
-                        onClick={() => socket.emit('impostor:reveal', { roomCode, playerId: playerToReveal.id })}
-                        disabled={!isRevealing}
+                        className={`w-full font-display tracking-widest text-xl py-8 rounded-2xl select-none transition-all duration-150 ${
+                            isRevealing
+                                ? 'bg-impostor shadow-[0_0_40px_rgba(88,86,214,0.5)] scale-[0.97]'
+                                : 'bg-impostor/80 hover:bg-impostor'
+                        }`}
+                        onMouseDown={handleHoldStart}
+                        onMouseUp={handleHoldEnd}
+                        onMouseLeave={handleHoldEnd}
+                        onTouchStart={(e) => { e.preventDefault(); handleHoldStart(); }}
+                        onTouchEnd={handleHoldEnd}
                     >
-                        VER MI ROL
+                        {isRevealing ? '👁 SUELTA PARA OCULTAR' : '👆 MANTÉN PULSADO PARA VER'}
                     </button>
                 </div>
             </div>
