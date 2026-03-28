@@ -3,7 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../contexts/SocketContext';
 
 export default function OfflineSetup() {
-    const [players, setPlayers] = useState([]);
+    const getInitialPlayers = () => {
+        try {
+            const stored = sessionStorage.getItem('party_session');
+            if (stored) {
+                const { playerName } = JSON.parse(stored);
+                if (playerName?.trim()) return [playerName.trim()];
+            }
+        } catch { /* ignore */ }
+        return [];
+    };
+    const [players, setPlayers] = useState(getInitialPlayers);
     const [currentName, setCurrentName] = useState('');
     const [error, setError] = useState('');
     const { enableOfflineMode, socket, isOffline } = useSocket();
