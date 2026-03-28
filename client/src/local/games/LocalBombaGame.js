@@ -16,10 +16,6 @@ class LocalBombaGame extends BombaGameCore {
         this.emit('gameStarted', 'bomba');
     }
 
-    restartGame() {
-        super.restartGame();
-    }
-
     emitState() {
         this.emit('bomba:state', this.gameState);
     }

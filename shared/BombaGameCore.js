@@ -199,7 +199,7 @@ class BombaGameCore {
                 { type: 'ADD_1', value: 1, description: '+1 trago' },
                 { type: 'MULT_2', value: 2, description: 'x2 tragos' },
                 { type: 'DIV_2', value: 2, description: '÷2 tragos' },
-                { type: 'ADD_PLAYERS', description: `+${this.gameState.players.length} tragos (1 por jugador)` },
+                { type: 'ADD_PLAYERS', value: this.gameState.players.length, description: `+${this.gameState.players.length} tragos (1 por jugador)` },
             ];
         }
 
@@ -209,21 +209,21 @@ class BombaGameCore {
 
     generateReto() {
         const retos = [
-            { type: 'RETO', description: 'Imita a alguien de aquí hasta el próximo turno' },
-            { type: 'RETO', description: 'El jugador a tu izquierda te hace una pregunta, tienes que responder con sinceridad' },
-            { type: 'RETO', description: 'Habla con acento hasta el próximo turno' },
-            { type: 'RETO', description: 'Elige a alguien: os dais un trago a la vez o se lo bebe todo él' },
-            { type: 'RETO', description: 'El grupo decide: ¿verdad o reto? Tú eliges' },
-            { type: 'RETO', description: 'Intercambia tu bebida con el jugador a tu derecha' },
-            { type: 'RETO', description: 'El siguiente jugador revela dos casillas en su turno' },
-            { type: 'RETO', description: 'Todos los que lleven gafas beben 1' },
-            { type: 'RETO', description: 'El que más haya bebido esta noche bebe 1 más' },
-            { type: 'RETO', description: 'Di el nombre completo de alguien de aquí o bebe el contador' },
-            { type: 'RETO', description: 'Cuenta algo vergonzoso o bebe el contador completo' },
-            { type: 'RETO', description: 'Brindis obligatorio — todos beben 1' },
-            { type: 'RETO', description: 'El jugador a tu izquierda y derecha beben 1 cada uno' },
-            { type: 'RETO', description: 'Propón un brindis: todos beben si están de acuerdo, si no, tú bebes' },
-            { type: 'RETO', description: 'Todos los jugadores votan quién debería beber. El más votado bebe 1' },
+            { description: 'Imita a alguien de aquí hasta el próximo turno' },
+            { description: 'El jugador a tu izquierda te hace una pregunta, tienes que responder con sinceridad' },
+            { description: 'Habla con acento hasta el próximo turno' },
+            { description: 'Elige a alguien: os dais un trago a la vez o se lo bebe todo él' },
+            { description: 'El grupo decide: ¿verdad o reto? Tú eliges' },
+            { description: 'Intercambia tu bebida con el jugador a tu derecha' },
+            { description: 'El siguiente jugador revela dos casillas en su turno' },
+            { description: 'Todos los que lleven gafas beben 1' },
+            { description: 'El que más haya bebido esta noche bebe 1 más' },
+            { description: 'Di el nombre completo de alguien de aquí o bebe el contador' },
+            { description: 'Cuenta algo vergonzoso o bebe el contador completo' },
+            { description: 'Brindis obligatorio — todos beben 1' },
+            { description: 'El jugador a tu izquierda y derecha beben 1 cada uno' },
+            { description: 'Propón un brindis: todos beben si están de acuerdo, si no, tú bebes' },
+            { description: 'Todos los jugadores votan quién debería beber. El más votado bebe 1' },
         ];
         const reto = retos[Math.floor(Math.random() * retos.length)];
         return { category: 'RETO', ...reto };
