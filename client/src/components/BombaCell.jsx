@@ -79,7 +79,7 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
             disabled={disabled || revealed}
             className={`
                 aspect-square rounded-xl font-bold text-2xl
-                transition-all duration-300 transform
+                transition-all duration-300 transform group
                 ${revealed ? 'scale-100' : 'scale-95 hover:scale-100'}
                 ${disabled && !revealed ? 'cursor-not-allowed opacity-50' : ''}
                 ${!revealed && !disabled ? 'hover:shadow-lg hover:shadow-white/20' : ''}
@@ -94,7 +94,7 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
                     absolute inset-0 flex items-center justify-center
                     ${revealed && revealedColor ? `bg-gradient-to-br ${revealedColor}` : ''}
                     ${!revealed ? 'bg-[#1a0000] border border-[#330000]' : ''}
-                    ${!revealed && !disabled ? 'hover:border-bomba/50 hover:bg-[#220000]' : ''}
+                    ${!revealed && !disabled ? 'group-hover:border-bomba/50 group-hover:bg-[#220000]' : ''}
                     ${revealed ? 'animate-flip' : ''}
                 `}
             >
