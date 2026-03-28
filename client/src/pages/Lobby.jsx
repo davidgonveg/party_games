@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSocket } from '../contexts/SocketContext';
 
@@ -11,6 +11,9 @@ export default function Lobby() {
     // Fallback: If context doesn't have room yet (race condition), check navigation state
     const location = useLocation();
     const effectiveRoom = room || location.state?.room;
+
+    const [bombaExpanded, setBombaExpanded] = useState(false);
+    const [selectedBombaSize, setSelectedBombaSize] = useState('medium');
 
     useEffect(() => {
         if (!socket) return;
@@ -161,26 +164,55 @@ export default function Lobby() {
                     <div className="space-y-3">
                         <p className="text-xs tracking-widest uppercase text-neutral-500 mb-3">Elegir juego</p>
 
-                        {/* La Bomba — 3 size options */}
+                        {/* La Bomba */}
                         <div className="flex flex-col gap-2">
-                            {[
-                                { size: 'small', label: 'LA BOMBA', sub: 'PEQUEÑA · 4×4' },
-                                { size: 'medium', label: 'LA BOMBA', sub: 'MEDIANA · 6×6' },
-                                { size: 'large', label: 'LA BOMBA', sub: 'GRANDE · 8×8' },
-                            ].map(({ size, label, sub }) => (
-                                <button
-                                    key={size}
-                                    onClick={() => amIHost && socket.emit('bomba:start', { roomCode, config: { size } })}
-                                    disabled={!amIHost}
-                                    className="bg-bomba w-full flex items-center gap-4 py-4 px-5 rounded hover:opacity-90 transition-opacity disabled:opacity-40"
-                                >
-                                    <span className="text-2xl">💣</span>
-                                    <div className="text-left">
-                                        <div className="font-display text-xl tracking-wide text-white leading-none">{label}</div>
-                                        <div className="text-xs uppercase tracking-widest text-white/70 mt-0.5">{sub}</div>
-                                    </div>
-                                </button>
-                            ))}
+                            <button
+                                onClick={() => setBombaExpanded(v => !v)}
+                                className="bg-bomba w-full flex items-center gap-4 py-4 px-5 rounded hover:opacity-90 transition-opacity text-left"
+                            >
+                                <span className="text-2xl">💣</span>
+                                <div className="flex-1">
+                                    <div className="font-display text-xl tracking-wide text-white leading-none">LA BOMBA</div>
+                                    <div className="text-xs uppercase tracking-widest text-white/70 mt-0.5">Toca para elegir tamaño</div>
+                                </div>
+                                <span className="text-white/60 text-sm">{bombaExpanded ? '▲' : '▼'}</span>
+                            </button>
+
+                            {bombaExpanded && (
+                                <div className="border border-bomba/30 rounded p-3 flex flex-col gap-2">
+                                    <p className="text-xs uppercase tracking-widest text-neutral-500 mb-1">Tamaño del tablero</p>
+                                    {[
+                                        { size: 'small', label: 'PEQUEÑA', sub: '4×4 · 16 casillas' },
+                                        { size: 'medium', label: 'MEDIANA', sub: '6×6 · 36 casillas' },
+                                        { size: 'large', label: 'GRANDE', sub: '8×8 · 64 casillas' },
+                                    ].map(({ size, label, sub }) => (
+                                        <button
+                                            key={size}
+                                            onClick={() => setSelectedBombaSize(size)}
+                                            className={`w-full flex items-center gap-3 py-3 px-4 rounded transition-all text-left ${
+                                                selectedBombaSize === size
+                                                    ? 'bg-bomba text-white'
+                                                    : 'border border-neutral-700 text-neutral-400 hover:border-bomba hover:text-white'
+                                            }`}
+                                        >
+                                            <div className="flex-1">
+                                                <div className="font-display text-base tracking-wide leading-none">{label}</div>
+                                                <div className="text-xs text-white/60 mt-0.5">{sub}</div>
+                                            </div>
+                                            {selectedBombaSize === size && <span className="text-sm">✓</span>}
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() => {
+                                            socket.emit('bomba:start', { roomCode, config: { size: selectedBombaSize } });
+                                            setBombaExpanded(false);
+                                        }}
+                                        className="w-full bg-bomba font-display tracking-widest text-lg py-4 rounded hover:opacity-90 transition-opacity mt-1"
+                                    >
+                                        INICIAR
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* El Impostor */}
