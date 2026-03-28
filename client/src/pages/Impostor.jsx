@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSocket } from '../contexts/SocketContext';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
+const BombaCell = ({ content, revealed, onClick, disabled }) => {
     const getCellIcon = () => {
         if (!revealed || !content) return '?';
 

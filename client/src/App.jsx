@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Lobby from './pages/Lobby';
 import YoNunca from './pages/YoNunca';
 import Bomba from './pages/Bomba';
+import Impostor from './pages/Impostor';
 
 
 import OfflineSetup from './pages/OfflineSetup';
@@ -18,6 +19,7 @@ function App() {
           <Route path="/lobby/:roomCode" element={<Lobby />} />
           <Route path="/yonunca/:roomCode" element={<YoNunca />} />
           <Route path="/bomba/:roomCode" element={<Bomba />} />
+          <Route path="/impostor/:roomCode" element={<Impostor />} />
 
         </Routes>
       </BrowserRouter>
