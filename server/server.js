@@ -5,7 +5,8 @@ require('dotenv').config();
 
 const roomManager = require('./src/rooms');
 const { YoNuncaGame, yonuncaStatements } = require('./src/games/yonunca');
-const { BombaGame } = require('./src/games/bomba');
+const { initBombaGame, getBombaGame } = require('./src/games/bomba');
+const { ImpostorGame } = require('./src/games/impostor');
 
 
 const path = require('path');
@@ -25,6 +26,15 @@ const io = new Server(httpServer, {
         methods: ["GET", "POST"]
     }
 });
+
+// Initialise the ESM-backed BombaGame module before any sockets connect.
+// All socket setup is deferred until this resolves.
+initBombaGame().then(startSocketServer).catch((err) => {
+    console.error('Failed to initialise BombaGame module:', err);
+    process.exit(1);
+});
+
+function startSocketServer() {
 
 io.on('connection', (socket) => {
     console.log('Usuario conectado:', socket.id);
@@ -177,7 +187,7 @@ io.on('connection', (socket) => {
         const room = roomManager.getRoom(roomCode);
         if (room) {
             // Always create new instance on start to ensure config is applied
-            room.gameInstance = new BombaGame(roomCode, io, room.players, config);
+            room.gameInstance = new (getBombaGame())(roomCode, io, room.players, config);
             room.game = 'bomba';
 
             room.gameInstance.startGame();
@@ -215,11 +225,70 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('bomba:skipTurn', ({ roomCode }) => {
+        const room = roomManager.getRoom(roomCode);
+        if (!room?.gameInstance) return;
+        // Only the host can skip (first player in the room is the host)
+        if (room.players[0]?.id !== socket.id) return;
+        room.gameInstance.skipTurn();
+    });
+
     socket.on('bomba:requestState', (roomCode) => {
         const room = roomManager.getRoom(roomCode);
         if (room && room.gameInstance) {
             socket.join(roomCode);
             socket.emit('bomba:state', room.gameInstance.getState());
+        }
+    });
+
+    // --- IMPOSTOR EVENTS ---
+
+    socket.on('impostor:start', (payload) => {
+        const roomCode = typeof payload === 'string' ? payload : payload.roomCode;
+        const impostorCount = (typeof payload === 'object' && payload.impostorCount) || 1;
+        console.log(`[Server] impostor:start received for room ${roomCode}, impostors: ${impostorCount}`);
+        const room = roomManager.getRoom(roomCode);
+        if (room) {
+            room.gameInstance = new ImpostorGame(roomCode, io, room.players, { impostorCount });
+            room.game = 'impostor';
+            room.gameInstance.startGame();
+            broadcastToRoom(roomCode, 'gameStarted', 'impostor');
+        }
+    });
+
+    socket.on('impostor:restart', (roomCode) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            room.gameInstance.restartGame();
+        }
+    });
+
+    socket.on('impostor:reveal', ({ roomCode, playerId }) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            room.gameInstance.revealRole(playerId);
+        }
+    });
+
+    socket.on('impostor:forceVoting', (roomCode) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            room.gameInstance.forceVoting();
+        }
+    });
+
+    socket.on('impostor:vote', ({ roomCode, voterId, targetId }) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            room.gameInstance.submitVote(voterId, targetId);
+        }
+    });
+
+    socket.on('impostor:requestState', (roomCode) => {
+        const room = roomManager.getRoom(roomCode);
+        if (room && room.gameInstance) {
+            socket.join(roomCode);
+            socket.emit('impostor:state', room.gameInstance.getState());
         }
     });
 
@@ -252,18 +321,19 @@ io.on('connection', (socket) => {
     });
 });
 
-// Health check / keep-alive endpoint
-app.get('/ping', (req, res) => {
-    res.json({ ok: true, timestamp: Date.now() });
-});
+    // Health check / keep-alive endpoint
+    app.get('/ping', (req, res) => {
+        res.json({ ok: true, timestamp: Date.now() });
+    });
 
-// SPA catch-all: serve index.html for any route not matched above
-// This must be AFTER all API routes and static files
-app.use((req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
+    // SPA catch-all: serve index.html for any route not matched above
+    // This must be AFTER all API routes and static files
+    app.use((req, res) => {
+        res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+    });
 
-const PORT = process.env.PORT || 3001;
-httpServer.listen(PORT, () => {
-    console.log(`Servidor corriendo en puerto ${PORT}`);
-});
+    const PORT = process.env.PORT || 3001;
+    httpServer.listen(PORT, () => {
+        console.log(`Servidor corriendo en puerto ${PORT}`);
+    });
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 
-const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
+const BombaCell = ({ content, revealed, onClick, disabled }) => {
     const getCellIcon = () => {
         if (!revealed || !content) return '?';
 
@@ -16,8 +16,13 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
             }
         }
 
+        if (category === 'RETO') {
+            return '🎯';
+        }
+
         if (category === 'MODIFIER') {
             switch (type) {
+                case 'ADD_PLAYERS': return '+👥';
                 case 'ADD_1': return '+1';
                 case 'ADD_2': return '+2';
                 case 'ADD_3': return '+3';
@@ -40,12 +45,16 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
     };
 
     const getCellColor = () => {
-        if (!revealed || !content) return 'from-gray-700 to-gray-800';
+        if (!revealed || !content) return null;
 
         const { category, type } = content;
 
         if (category === 'BOMB') {
             return 'from-red-600 to-red-800';
+        }
+
+        if (category === 'RETO') {
+            return 'from-purple-700 to-purple-900';
         }
 
         if (category === 'MODIFIER') {
@@ -59,8 +68,10 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
             return 'from-green-600 to-green-800';
         }
 
-        return 'from-gray-600 to-gray-700';
+        return 'from-neutral-700 to-neutral-800';
     };
+
+    const revealedColor = getCellColor();
 
     return (
         <button
@@ -68,7 +79,7 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
             disabled={disabled || revealed}
             className={`
                 aspect-square rounded-xl font-bold text-2xl
-                transition-all duration-300 transform
+                transition-all duration-300 transform group
                 ${revealed ? 'scale-100' : 'scale-95 hover:scale-100'}
                 ${disabled && !revealed ? 'cursor-not-allowed opacity-50' : ''}
                 ${!revealed && !disabled ? 'hover:shadow-lg hover:shadow-white/20' : ''}
@@ -80,8 +91,10 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
         >
             <div
                 className={`
-                    absolute inset-0 bg-gradient-to-br ${getCellColor()}
-                    flex items-center justify-center
+                    absolute inset-0 flex items-center justify-center
+                    ${revealed && revealedColor ? `bg-gradient-to-br ${revealedColor}` : ''}
+                    ${!revealed ? 'bg-[#1a0000] border border-[#330000]' : ''}
+                    ${!revealed && !disabled ? 'group-hover:border-bomba/50 group-hover:bg-[#220000]' : ''}
                     ${revealed ? 'animate-flip' : ''}
                 `}
             >
@@ -92,7 +105,7 @@ const BombaCell = ({ index, content, revealed, onClick, disabled }) => {
 
             {/* Shine effect on unrevealed */}
             {!revealed && (
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
             )}
         </button>
     );

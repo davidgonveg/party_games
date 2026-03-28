@@ -6,6 +6,7 @@ export default function Home() {
     const [playerName, setPlayerName] = useState('');
     const [roomCode, setRoomCode] = useState('');
     const [error, setError] = useState('');
+    const [mode, setMode] = useState('create'); // 'create' | 'join'
     const { socket } = useSocket();
     const navigate = useNavigate();
 
@@ -49,7 +50,7 @@ export default function Home() {
         if (!roomCode) return setError('Escribe el código');
         socket.emit('joinRoom', { roomCode: roomCode.toUpperCase(), playerName });
         // Optimistically save session, knowing server will reject if failed.
-        // Better: Wait for roomUpdated? 
+        // Better: Wait for roomUpdated?
         // Actually SocketContext handles roomUpdated. But we need to know OUR name.
         sessionStorage.setItem('party_session', JSON.stringify({
             roomCode: roomCode.toUpperCase(),
@@ -58,74 +59,97 @@ export default function Home() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-            <h1 className="text-5xl font-extrabold mb-10 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-pink-500">
-                Party Games
-            </h1>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#111] text-white p-4">
+            <div className="w-full max-w-xs flex flex-col items-center">
+                {/* Title */}
+                <h1 className="font-display text-7xl leading-none tracking-tight text-white text-center">
+                    PARTY<br />GAMES
+                </h1>
+                <p className="text-xs tracking-[6px] uppercase text-neutral-500 mt-2 mb-10">
+                    JUEGOS DE FIESTA
+                </p>
 
-            {error && <div className="bg-red-500/20 border border-red-500 text-red-100 p-3 rounded mb-6 w-full max-w-sm text-center">{error}</div>}
-
-            <div className="w-full max-w-sm space-y-8">
-                {/* Step 1: Identity */}
-                <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50 backdrop-blur-sm">
-                    <label className="block text-gray-400 text-sm font-bold mb-2 uppercase tracking-wider">
-                        1. ¿Cómo te llamas?
-                    </label>
-                    <input
-                        type="text"
-                        placeholder="Tu nombre (ej. Gonza)"
-                        className="w-full p-4 rounded-lg bg-gray-900 border border-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-lg"
-                        value={playerName}
-                        onChange={e => setPlayerName(e.target.value)}
-                    />
-                </div>
-
-                {/* Step 2: Action */}
-                <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50 backdrop-blur-sm relative overflow-hidden">
-                    <label className="block text-gray-400 text-sm font-bold mb-4 uppercase tracking-wider">
-                        2. Elige tu camino
-                    </label>
-
-                    <button
-                        onClick={handleCreate}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 p-3 rounded-lg font-bold text-lg transition shadow-lg flex items-center justify-center gap-2 group"
-                    >
-                        <span>👑</span> Crear Sala Nueva
-                    </button>
-
-                    <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-600"></div>
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                            <span className="px-2 bg-gray-800 text-gray-400 uppercase">O únete con código</span>
-                        </div>
+                {/* Error */}
+                {error && (
+                    <div className="border border-red-500 text-red-400 px-4 py-2 text-sm mb-6 w-full text-center">
+                        {error}
                     </div>
+                )}
 
-                    <div className="flex gap-2 w-full mb-6">
+                {/* Form */}
+                <div className="w-full">
+                    {/* Player name */}
+                    <div className="mb-8">
+                        <label className="text-xs tracking-widest uppercase text-neutral-500 block mb-1">
+                            Tu nombre
+                        </label>
                         <input
                             type="text"
-                            placeholder="CÓDIGO"
-                            className="flex-1 min-w-0 p-3 rounded-lg bg-gray-900 border border-gray-600 focus:outline-none focus:border-pink-500 uppercase font-mono text-center tracking-widest text-lg"
-                            value={roomCode}
-                            onChange={e => setRoomCode(e.target.value)}
+                            placeholder="Ej. Gonza"
+                            className="bg-transparent border-0 border-b border-neutral-700 focus:border-white focus:outline-none text-white text-lg w-full pb-2 transition-colors"
+                            value={playerName}
+                            onChange={e => setPlayerName(e.target.value)}
                         />
-                        <button
-                            onClick={handleJoin}
-                            className="px-4 bg-pink-600 hover:bg-pink-700 rounded-lg font-bold transition shadow-lg flex items-center gap-2 whitespace-nowrap"
-                        >
-                            🚀 Entrar
-                        </button>
                     </div>
 
-                    <div className="border-t border-gray-700 pt-4">
+                    {/* Mode: Create */}
+                    {mode === 'create' && (
+                        <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+                            <button
+                                type="submit"
+                                className="bg-white text-[#111] font-display tracking-widest text-lg py-3 px-6 w-full rounded hover:bg-neutral-200 transition-colors"
+                            >
+                                CREAR SALA
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setMode('join'); setError(''); }}
+                                className="text-neutral-500 hover:text-white text-sm transition-colors mt-4 block text-center underline-offset-4 hover:underline w-full"
+                            >
+                                Unirse con código
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Mode: Join */}
+                    {mode === 'join' && (
+                        <form onSubmit={(e) => { e.preventDefault(); handleJoin(); }}>
+                            <div className="mb-8">
+                                <label className="text-xs tracking-widest uppercase text-neutral-500 block mb-1">
+                                    Código de sala
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="CÓDIGO"
+                                    className="bg-transparent border-0 border-b border-neutral-700 focus:border-white focus:outline-none text-white text-lg w-full pb-2 transition-colors uppercase tracking-widest font-mono"
+                                    value={roomCode}
+                                    onChange={e => setRoomCode(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="bg-white text-[#111] font-display tracking-widest text-lg py-3 px-6 w-full rounded hover:bg-neutral-200 transition-colors"
+                            >
+                                ENTRAR
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setMode('create'); setError(''); }}
+                                className="text-neutral-500 hover:text-white text-sm transition-colors mt-4 block text-center underline-offset-4 hover:underline w-full"
+                            >
+                                Crear sala nueva
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Offline mode */}
+                    <div className="mt-10 border-t border-neutral-800 pt-6">
                         <button
                             onClick={() => navigate('/offline')}
-                            className="w-full bg-gray-700 hover:bg-gray-600 p-3 rounded-lg font-bold text-lg transition shadow-lg flex items-center justify-center gap-2 text-green-400"
+                            className="text-neutral-500 hover:text-white text-sm transition-colors block text-center underline-offset-4 hover:underline w-full"
                         >
-                            <span>🏠</span> Jugar Modo Offline
+                            Jugar sin internet (modo offline)
                         </button>
-                        <p className="text-xs text-gray-500 text-center mt-2">Para jugar todos desde este móvil</p>
                     </div>
                 </div>
             </div>

@@ -3,8 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../contexts/SocketContext';
 
 export default function OfflineSetup() {
-    const [players, setPlayers] = useState([]);
+    const getInitialPlayers = () => {
+        try {
+            const stored = sessionStorage.getItem('party_session');
+            if (stored) {
+                const { playerName } = JSON.parse(stored);
+                if (playerName?.trim()) return [playerName.trim()];
+            }
+        } catch { /* ignore */ }
+        return [];
+    };
+    const [players, setPlayers] = useState(getInitialPlayers);
     const [currentName, setCurrentName] = useState('');
+    const [error, setError] = useState('');
     const { enableOfflineMode, socket, isOffline } = useSocket();
     const navigate = useNavigate();
 
@@ -41,9 +52,10 @@ export default function OfflineSetup() {
     const addPlayer = (e) => {
         e.preventDefault();
         if (!currentName.trim()) return;
-        if (players.length >= 20) return alert('Máximo 20 jugadores');
+        if (players.length >= 20) { setError('Máximo 20 jugadores'); return; }
         setPlayers([...players, currentName.trim()]);
         setCurrentName('');
+        setError('');
     }
 
     const removePlayer = (index) => {
@@ -53,62 +65,90 @@ export default function OfflineSetup() {
     }
 
     const startGame = () => {
-        if (players.length < 2) return alert('Mínimo 2 jugadores');
+        if (players.length < 2) { setError('Mínimo 2 jugadores'); return; }
 
         // Initialize the local room atomically
-        console.log('Starting offline game with players:', players);
         socket.emit('offline:start', players);
     }
 
     return (
-        <div className="flex flex-col items-center min-h-screen bg-gray-900 text-white p-4">
-            <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
-                Modo Offline 🏠
-            </h1>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#111] text-white p-4">
+            <div className="w-full max-w-xs flex flex-col items-center">
 
-            <div className="w-full max-w-md bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
-                <form onSubmit={addPlayer} className="mb-6">
-                    <label className="block text-sm font-bold text-gray-400 mb-2">Añadir Jugador ({players.length}/20)</label>
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            className="flex-1 bg-gray-900 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-green-500"
-                            placeholder="Nombre..."
-                            value={currentName}
-                            onChange={(e) => setCurrentName(e.target.value)}
-                            autoFocus
-                        />
-                        <button
-                            type="submit"
-                            disabled={players.length >= 20}
-                            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold disabled:opacity-50"
-                        >
-                            +
-                        </button>
-                    </div>
-                </form>
+                {/* Title */}
+                <h1 className="font-display text-7xl leading-none tracking-tight text-white text-center">
+                    OFFLINE
+                </h1>
+                <p className="text-xs tracking-[6px] uppercase text-neutral-500 mt-2 mb-10">
+                    MODO SIN INTERNET
+                </p>
 
-                <div className="space-y-2 mb-6 max-h-60 overflow-y-auto">
-                    {players.map((p, i) => (
-                        <div key={i} className="flex justify-between items-center bg-gray-700 p-3 rounded">
-                            <span className="font-medium">{i + 1}. {p}</span>
-                            <button onClick={() => removePlayer(i)} className="text-red-400 hover:text-red-300">✕</button>
+                {/* Add player form */}
+                <div className="w-full">
+                    <form onSubmit={addPlayer} className="mb-8">
+                        <label className="text-xs tracking-widest uppercase text-neutral-500 block mb-1">
+                            Añadir jugador ({players.length}/20)
+                        </label>
+                        <div className="flex items-end gap-4">
+                            <input
+                                type="text"
+                                className="bg-transparent border-0 border-b border-neutral-700 focus:border-white focus:outline-none text-white text-lg flex-1 pb-2 transition-colors"
+                                placeholder="Nombre..."
+                                value={currentName}
+                                onChange={(e) => setCurrentName(e.target.value)}
+                                autoFocus
+                            />
+                            <button
+                                type="submit"
+                                disabled={players.length >= 20}
+                                className="bg-white text-[#111] font-display tracking-widest text-sm py-2 px-4 rounded hover:bg-neutral-200 transition-colors disabled:opacity-30"
+                            >
+                                +
+                            </button>
                         </div>
-                    ))}
-                    {players.length === 0 && <p className="text-center text-gray-500 italic">No hay jugadores</p>}
+                        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+                    </form>
+
+                    {/* Players list */}
+                    <div className="mb-8">
+                        {players.length === 0 && (
+                            <p className="text-neutral-600 text-sm text-center">Ningún jugador añadido</p>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                            {players.map((p, i) => (
+                                <div
+                                    key={i}
+                                    className="border border-neutral-700 text-neutral-400 text-sm px-3 py-1 rounded-sm inline-flex items-center gap-2"
+                                >
+                                    <span>{p}</span>
+                                    <button
+                                        onClick={() => removePlayer(i)}
+                                        className="text-neutral-600 hover:text-white transition-colors leading-none"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Start button */}
+                    <button
+                        onClick={startGame}
+                        disabled={players.length < 2}
+                        className="bg-white text-[#111] font-display tracking-widest text-lg py-3 px-6 w-full rounded hover:bg-neutral-200 transition-colors disabled:opacity-30"
+                    >
+                        EMPEZAR
+                    </button>
+
+                    {/* Back */}
+                    <button
+                        onClick={() => navigate('/')}
+                        className="text-neutral-500 hover:text-white text-sm transition-colors mt-4 block text-center underline-offset-4 hover:underline w-full"
+                    >
+                        Cancelar
+                    </button>
                 </div>
-
-                <button
-                    onClick={startGame}
-                    disabled={players.length < 2}
-                    className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-lg font-bold text-lg transition disabled:opacity-50 flex justify-center items-center gap-2"
-                >
-                    🚀 Empezar Partida
-                </button>
-
-                <button onClick={() => navigate('/')} className="w-full mt-4 text-gray-400 hover:text-white text-sm">
-                    Cancelar
-                </button>
             </div>
         </div>
     );
