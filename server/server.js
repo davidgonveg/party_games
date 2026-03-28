@@ -243,11 +243,13 @@ io.on('connection', (socket) => {
 
     // --- IMPOSTOR EVENTS ---
 
-    socket.on('impostor:start', (roomCode) => {
-        console.log(`[Server] impostor:start received for room ${roomCode}`);
+    socket.on('impostor:start', (payload) => {
+        const roomCode = typeof payload === 'string' ? payload : payload.roomCode;
+        const impostorCount = (typeof payload === 'object' && payload.impostorCount) || 1;
+        console.log(`[Server] impostor:start received for room ${roomCode}, impostors: ${impostorCount}`);
         const room = roomManager.getRoom(roomCode);
         if (room) {
-            room.gameInstance = new ImpostorGame(roomCode, io, room.players);
+            room.gameInstance = new ImpostorGame(roomCode, io, room.players, { impostorCount });
             room.game = 'impostor';
             room.gameInstance.startGame();
             broadcastToRoom(roomCode, 'gameStarted', 'impostor');

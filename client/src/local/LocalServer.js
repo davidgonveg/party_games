@@ -266,20 +266,23 @@ class LocalRoomManager {
                 break;
 
             // --- IMPOSTOR EVENTS ---
-            case 'impostor:start':
-                console.log('[LocalServer] Received impostor:start');
+            case 'impostor:start': {
+                const impostorCount = (typeof payload === 'object' && payload?.impostorCount) || 1;
+                console.log('[LocalServer] Received impostor:start, impostors:', impostorCount);
                 try {
                     this.room.game = 'impostor';
                     this.room.gameInstance = new LocalImpostorGame(
                         'OFFLINE',
                         this.emitCallback,
-                        this.room.players
+                        this.room.players,
+                        { impostorCount }
                     );
                     this.room.gameInstance.startGame();
                 } catch (err) {
                     console.error('[LocalServer] Error starting impostor:', err);
                 }
                 break;
+            }
 
             case 'impostor:restart':
                 if (this.room.gameInstance && this.room.game === 'impostor') {

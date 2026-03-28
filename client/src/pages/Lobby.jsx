@@ -14,6 +14,8 @@ export default function Lobby() {
 
     const [bombaExpanded, setBombaExpanded] = useState(false);
     const [selectedBombaSize, setSelectedBombaSize] = useState('medium');
+    const [impostorExpanded, setImpostorExpanded] = useState(false);
+    const [impostorCount, setImpostorCount] = useState(1);
 
     useEffect(() => {
         if (!socket) return;
@@ -216,13 +218,53 @@ export default function Lobby() {
                         </div>
 
                         {/* El Impostor */}
-                        <button
-                            className="w-full bg-impostor py-4 px-5 rounded hover:opacity-90 transition-opacity text-left"
-                            onClick={() => socket.emit('impostor:start', roomCode)}
-                        >
-                            <p className="text-xs uppercase tracking-widest text-white opacity-70 mb-1">Encuentra al traidor</p>
-                            <p className="font-display text-xl tracking-wide text-white">EL IMPOSTOR</p>
-                        </button>
+                        <div className="flex flex-col gap-2">
+                            <button
+                                className="w-full bg-impostor py-4 px-5 rounded hover:opacity-90 transition-opacity text-left flex items-center"
+                                onClick={() => setImpostorExpanded(v => !v)}
+                            >
+                                <div className="flex-1">
+                                    <p className="text-xs uppercase tracking-widest text-white opacity-70 mb-1">Encuentra al traidor</p>
+                                    <p className="font-display text-xl tracking-wide text-white">EL IMPOSTOR</p>
+                                </div>
+                                <span className="text-white/60 text-sm">{impostorExpanded ? '▲' : '▼'}</span>
+                            </button>
+
+                            {impostorExpanded && (
+                                <div className="border border-impostor/30 rounded p-3 flex flex-col gap-2">
+                                    <p className="text-xs uppercase tracking-widest text-neutral-500 mb-1">Número de impostores</p>
+                                    <div className="flex gap-2">
+                                        {[1, 2, 3].map(n => {
+                                            const maxImpostors = Math.max(1, Math.floor(effectiveRoom.players.length / 3));
+                                            const disabled = n > maxImpostors;
+                                            return (
+                                                <button
+                                                    key={n}
+                                                    disabled={disabled}
+                                                    onClick={() => setImpostorCount(n)}
+                                                    className={`flex-1 py-3 font-display text-2xl rounded transition-all ${
+                                                        impostorCount === n
+                                                            ? 'bg-impostor text-white'
+                                                            : 'border border-neutral-700 text-neutral-400 hover:border-impostor disabled:opacity-30 disabled:cursor-not-allowed'
+                                                    }`}
+                                                >
+                                                    {n}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            socket.emit('impostor:start', { roomCode, impostorCount });
+                                            setImpostorExpanded(false);
+                                        }}
+                                        className="w-full bg-impostor font-display tracking-widest text-lg py-4 rounded hover:opacity-90 transition-opacity mt-1"
+                                    >
+                                        INICIAR
+                                    </button>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Yo Nunca */}
                         <button

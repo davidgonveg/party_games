@@ -4,6 +4,7 @@ class ImpostorGame {
     constructor(roomCode, io, players, config = {}) {
         this.roomCode = roomCode;
         this.io = io;
+        this.config = config;
 
         // Mantener a los jugadores actualizados (sin clones innecesarios, o copiando la base)
         this.players = players;
@@ -12,6 +13,7 @@ class ImpostorGame {
             state: 'START', // START, REVEAL, DISCUSSION, VOTING, RESULTS
             word: '',
             impostorId: null,
+            impostorIds: [],
             players: this.players.map((p) => ({ ...p, role: null, hasRevealed: false })),
             votes: {}, // voterId -> targetPlayerId
             results: null, // { winners: 'impostor' | 'innocents', votes: {}, impostorId, voteCounts: {} }
@@ -24,19 +26,24 @@ class ImpostorGame {
         console.log(`[Impostor] Game started in room ${this.roomCode}`);
 
         const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
-        const impostorIndex = Math.floor(Math.random() * this.players.length);
-        const impostorId = this.players[impostorIndex].id;
+        const impostorCount = Math.min(
+            this.config.impostorCount || 1,
+            Math.max(1, Math.floor(this.players.length / 3))
+        );
+
+        const shuffled = [...this.players].sort(() => Math.random() - 0.5);
+        const impostorIds = shuffled.slice(0, impostorCount).map(p => p.id);
 
         this.gameState.word = randomWord;
-        this.gameState.impostorId = impostorId;
+        this.gameState.impostorIds = impostorIds;
+        this.gameState.impostorId = impostorIds[0]; // backwards compat
         this.gameState.state = 'REVEAL';
         this.gameState.votes = {};
         this.gameState.results = null;
 
-        // Actualizamos estado de los jugadores
         this.gameState.players = this.players.map((p) => ({
             ...p,
-            role: p.id === impostorId ? 'impostor' : 'innocent',
+            role: impostorIds.includes(p.id) ? 'impostor' : 'innocent',
             hasRevealed: false,
         }));
 
@@ -123,7 +130,7 @@ class ImpostorGame {
         // Si hay empate o el más votado NO es el impostor, gana el impostor.
         // Si el más votado en solitario ES el impostor, ganan los inocentes.
         let winners = 'impostor';
-        if (mostVotedIds.length === 1 && mostVotedIds[0] === this.gameState.impostorId) {
+        if (mostVotedIds.length === 1 && this.gameState.impostorIds.includes(mostVotedIds[0])) {
             winners = 'innocents';
         }
 

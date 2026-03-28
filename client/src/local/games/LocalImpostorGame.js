@@ -1,15 +1,17 @@
 import WORDS from '../impostor_words.json';
 
 class LocalImpostorGame {
-    constructor(roomCode, emitCallback, players) {
+    constructor(roomCode, emitCallback, players, config = {}) {
         this.roomCode = roomCode;
         this.emitCallback = emitCallback;
         this.players = players;
+        this.config = config;
 
         this.gameState = {
             state: 'START',
             word: '',
             impostorId: null,
+            impostorIds: [],
             players: this.players.map(p => ({ ...p, role: null, hasRevealed: false })),
             votes: {},
             results: null,
@@ -26,18 +28,24 @@ class LocalImpostorGame {
     startGame() {
         console.log(`[LocalImpostor] Game started in offline room`);
         const randomWord = WORDS[Math.floor(Math.random() * WORDS.length)];
-        const impostorIndex = Math.floor(Math.random() * this.players.length);
-        const impostorId = this.players[impostorIndex].id;
+        const impostorCount = Math.min(
+            this.config.impostorCount || 1,
+            Math.max(1, Math.floor(this.players.length / 3))
+        );
+
+        const shuffled = [...this.players].sort(() => Math.random() - 0.5);
+        const impostorIds = shuffled.slice(0, impostorCount).map(p => p.id);
 
         this.gameState.word = randomWord;
-        this.gameState.impostorId = impostorId;
+        this.gameState.impostorIds = impostorIds;
+        this.gameState.impostorId = impostorIds[0]; // backwards compat
         this.gameState.state = 'REVEAL';
         this.gameState.votes = {};
         this.gameState.results = null;
 
         this.gameState.players = this.players.map(p => ({
             ...p,
-            role: p.id === impostorId ? 'impostor' : 'innocent',
+            role: impostorIds.includes(p.id) ? 'impostor' : 'innocent',
             hasRevealed: false,
         }));
 
@@ -120,7 +128,7 @@ class LocalImpostorGame {
         });
 
         let winners = 'impostor';
-        if (mostVotedIds.length === 1 && mostVotedIds[0] === this.gameState.impostorId) {
+        if (mostVotedIds.length === 1 && this.gameState.impostorIds.includes(mostVotedIds[0])) {
             winners = 'innocents';
         }
 
