@@ -185,20 +185,27 @@ class BombaGameCore {
                 { type: 'MULT_3', value: 3, description: 'x3 tragos' },
             ];
         } else if (counter <= 10) {
-            // Medium counter: ADD_1 weighted double
+            // Medium counter: ADD_1 weighted double, DIV_2 weight halved
             modifiers = [
                 { type: 'ADD_1', value: 1, description: '+1 trago' },
                 { type: 'ADD_1', value: 1, description: '+1 trago' },
+                { type: 'ADD_1', value: 1, description: '+1 trago' },
+                { type: 'ADD_1', value: 1, description: '+1 trago' },
                 { type: 'ADD_2', value: 2, description: '+2 tragos' },
+                { type: 'ADD_2', value: 2, description: '+2 tragos' },
+                { type: 'MULT_2', value: 2, description: 'x2 tragos' },
                 { type: 'MULT_2', value: 2, description: 'x2 tragos' },
                 { type: 'DIV_2', value: 2, description: '÷2 tragos' },
             ];
         } else {
-            // High counter: include ADD_PLAYERS, no ADD_2
+            // High counter: include ADD_PLAYERS, no ADD_2, DIV_2 weight halved
             modifiers = [
                 { type: 'ADD_1', value: 1, description: '+1 trago' },
+                { type: 'ADD_1', value: 1, description: '+1 trago' },
+                { type: 'MULT_2', value: 2, description: 'x2 tragos' },
                 { type: 'MULT_2', value: 2, description: 'x2 tragos' },
                 { type: 'DIV_2', value: 2, description: '÷2 tragos' },
+                { type: 'ADD_PLAYERS', value: this.gameState.players.length, description: `+${this.gameState.players.length} tragos (1 por jugador)` },
                 { type: 'ADD_PLAYERS', value: this.gameState.players.length, description: `+${this.gameState.players.length} tragos (1 por jugador)` },
             ];
         }
