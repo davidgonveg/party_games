@@ -63,7 +63,7 @@ export default function Home() {
             <div className="w-full max-w-xs flex flex-col items-center">
                 {/* Title */}
                 <h1 className="font-display text-7xl leading-none tracking-tight text-white text-center">
-                    PARTY<br />GAMES
+                    Inéditos
                 </h1>
                 <p className="text-xs tracking-[6px] uppercase text-neutral-500 mt-2 mb-10">
                     JUEGOS DE FIESTA
